@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+<body class="login-bg">
+    <!-- 背景装饰元素 -->
+    <div class="login-bg-decor">
+        <div class="decor decor1"></div>
+        <div class="decor decor2"></div>
+        <div class="decor decor3"></div>
+    </div>
+    <!-- 主登录容器 -->
+    <div class="glass-card login-container">
+        <div class="login-title">318<span class="login-accent">TECH</span></div>
+        <p class="login-subtitle">连接未来，从这里开始</p>
+        <% if (locals.error) { %>
+            <div class="form-error"><%= error %></div>
+        <% } %>
+        <!-- 登录表单 -->
+        <form class="login-form" action="/api/auth/login" method="POST" autocomplete="on">
+            <input type="hidden" name="redirect_uri" value="<%= redirect_uri %>">
+            <div class="form-group">
+                <label for="login-email"><i class="fa fa-user"></i></label>
+                <input type="email" id="login-email" name="email" required autocomplete="username" class="login-input" placeholder="邮箱">
+            </div>
+            <div class="form-group">
+                <label for="login-password"><i class="fa fa-lock"></i></label>
+                <input type="password" id="login-password" name="password" required autocomplete="current-password" class="login-input" placeholder="密码">
+                <span class="toggle-password" id="togglePassword"><i class="fa fa-eye-slash"></i></span>
+            </div>
+            <div class="form-row form-remember">
+                <label><input id="remember" type="checkbox"> 记住我</label>
+                <a href="#" class="forgot-link">忘记密码?</a>
+            </div>
+            <button type="submit" class="login-btn">登录账户</button>
+            <div class="register-link">
+                还没有账户? <a href="#" id="showRegisterModalBtn">立即注册</a>
+            </div>
+        </form>
+    </div>
+    <!-- 注册弹窗Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">注册新账户</div>
+            <p class="modal-subtitle">请填写以下信息完成注册</p>
+            <form id="registerForm" class="register-form" action="/api/auth/register" method="POST" autocomplete="on" onsubmit="return validateRegisterForm()">
+                <input type="hidden" name="redirect_uri" value="<%= redirect_uri %>">
+                <div class="form-group">
+                    <label for="register-name"><i class="fa fa-user"></i></label>
+                  <input type="text" id="register-name" name="name" required autocomplete="name" class="login-input" placeholder="姓名">
+                </div>
+                <div class="form-group">
+                    <label for="register-email"><i class="fa fa-envelope"></i></label>
+                    <input type="email" id="register-email" name="email" required autocomplete="username" class="login-input" placeholder="邮箱">
+                </div>
+                <div class="form-group">
+                    <label for="register-password"><i class="fa fa-lock"></i></label>
+                    <input type="password" id="register-password" name="password" required autocomplete="new-password" class="login-input" placeholder="密码">
+                </div>
+                <div id="registerEmailError" class="form-error" style="display:none;"></div>
+                <button class="login-btn" type="submit">注册</button>
+            </form>
+            <button class="modal-cancel" type="button" onclick="closeRegisterModal()">取消</button>
+        </div>
+    </div>
+    <script>
+        // 密码显示/隐藏切换
+        const passwordInput = document.getElementById('login-password');
+        const togglePassword = document.getElementById('togglePassword');
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            const icon = this.querySelector('i');
+            if (type === 'text') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+        // 注册弹窗逻辑
+        const showRegisterModalBtn = document.getElementById('showRegisterModalBtn');
+        const registerModal = document.getElementById('registerModal');
+        function closeRegisterModal() {
+            registerModal.style.display = 'none';
+        }
+        showRegisterModalBtn.onclick = function(e) {
+            e.preventDefault();
+            registerModal.style.display = 'flex';
+            document.getElementById('register-name').focus();
+        };
+        // 邮箱格式校验
+        function validateRegisterForm() {
+            const email = document.getElementById('register-email').value.trim();
+            const errorDiv = document.getElementById('registerEmailError');
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(email)) {
+                errorDiv.textContent = '请输入有效的邮箱地址';
+                errorDiv.style.display = 'block';
+                return false;
+            }
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        // ESC关闭弹窗
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeRegisterModal();
+        });
+        // 点击遮罩关闭弹窗
+        registerModal.addEventListener('click', function(e) {
+            if (e.target === registerModal) closeRegisterModal();
+        });
+    </script>
+</body>
+</html>

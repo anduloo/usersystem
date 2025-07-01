@@ -1,0 +1,1625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+            <h1 class="sidebar-title">管理系统</h1>
+        <div class="sidebar-divider"></div>
+        <nav class="sidebar-menu">
+            <a href="#dashboard" class="sidebar-menu-item nav-item-active" id="tab-dashboard"><i class="fa fa-dashboard"></i><span>Dashboard</span></a>
+            <a href="#users" class="sidebar-menu-item" id="tab-users"><i class="fa fa-users"></i><span>用户管理</span></a>
+            <a href="#projects" class="sidebar-menu-item" id="tab-projects"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+            <a href="#operation-logs" class="sidebar-menu-item" id="tab-logs"><i class="fa fa-history"></i><span>操作日志</span></a>
+            <a href="#login-logs" class="sidebar-menu-item" id="tab-login-logs"><i class="fa fa-sign-in"></i><span>登录日志</span></a>
+            <a href="#access-logs" class="sidebar-menu-item" id="tab-access-logs"><i class="fa fa-eye"></i><span>访问日志</span></a>
+        </nav>
+    </aside>
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <header class="main-header">
+            <div class="main-header-title" id="pageTitle">Dashboard</div>
+            <div class="main-header-user">
+                <span class="main-header-username" id="user-info"></span>
+                <div class="dropdown" id="admin-dropdown">
+                    <button class="dropdown-toggle">
+                        <i class="fa fa-user-circle"></i>
+                        <i class="fa fa-chevron-down dropdown-arrow"></i>
+                    </button>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <button class="dropdown-item" id="change-password-btn">
+                            <i class="fa fa-key"></i>
+                            <span>修改密码</span>
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="logout-btn">
+                            <i class="fa fa-sign-out"></i>
+                            <span>退出登录</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="main-body" id="contentArea">
+            <section id="dashboard-section">
+                <!-- Dashboard 区块 -->
+                <div class="stat-card-group">
+                  <div class="stat-card-title">数据概览</div>
+                  <div class="stat-card-row">
+                    <div class="stat-card-item">
+                      <div class="stat-card-label">总用户数</div>
+                      <div class="stat-card-value"><span id="stat-user-count">-</span><span class="stat-card-unit">人</span></div>
+                            </div>
+                    <div class="stat-card-divider"></div>
+                    <div class="stat-card-item">
+                      <div class="stat-card-label">总项目数</div>
+                      <div class="stat-card-value"><span id="stat-project-count">-</span><span class="stat-card-unit">个</span></div>
+                            </div>
+                        </div>
+                    </div>
+                <!-- 统计表格区块 -->
+                <div class="dashboard-stat-row">
+                    <div class="dashboard-stat-card">
+                        <h3 class="stat-card-title">项目访问次数</h3>
+                        <table id="dashboard-project-access-table">
+                            <thead><tr><th>项目</th><th>访问次数</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="dashboard-stat-card">
+                        <h3 class="stat-card-title">用户登录次数</h3>
+                        <table id="dashboard-user-login-table">
+                            <thead><tr><th>用户</th><th>登录次数</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="dashboard-stat-card">
+                        <h3 class="stat-card-title">城市登录次数</h3>
+                        <table id="dashboard-city-login-table">
+                            <thead><tr><th>城市</th><th>登录次数</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section id="user-management">
+                <div class="card">
+                    <!-- 搜索和分页控制 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">搜索用户：</label>
+                            <input type="text" id="user-search" placeholder="输入邮箱或姓名搜索..." style="padding: 0.5rem 1rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8); width: 250px;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                            <select id="user-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="10">10条</option>
+                                <option value="20" selected>20条</option>
+                                <option value="50">50条</option>
+                                <option value="100">100条</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>邮箱</th>
+                                <th>姓名</th>
+                                <th>角色</th>
+                                <th>权限状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- 用户数据由JS填充 --></tbody>
+                    </table>
+                    
+                    <!-- 分页控件 -->
+                    <div id="user-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            显示 <span id="user-start">1</span> - <span id="user-end">20</span> 条，共 <span id="user-total">0</span> 条
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="user-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                            <div id="user-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                            <button id="user-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="project-management">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">项目管理</h3>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                            <select id="project-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="10">10条</option>
+                                <option value="20" selected>20条</option>
+                                <option value="50">50条</option>
+                                <option value="100">100条</option>
+                            </select>
+                            <button class="btn btn-primary" id="add-project-btn">添加项目</button>
+                </div>
+                    </div>
+                    <table id="projects-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>名称</th>
+                                <th>描述</th>
+                                <th>项目地址</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- 项目数据由JS填充 --></tbody>
+                    </table>
+                    
+                    <!-- 分页控件 -->
+                    <div id="project-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            显示 <span id="project-start">1</span> - <span id="project-end">20</span> 条，共 <span id="project-total">0</span> 条
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="project-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                            <div id="project-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                            <button id="project-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="admin-log-section">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">操作日志</h3>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                            <select id="admin-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="10">10条</option>
+                                <option value="20" selected>20条</option>
+                                <option value="50">50条</option>
+                                <option value="100">100条</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table id="admin-log-table">
+                        <thead>
+                            <tr>
+                                <th>时间</th>
+                                <th>管理员ID</th>
+                                <th>操作</th>
+                                <th>对象类型</th>
+                                <th>对象ID</th>
+                                <th>详情</th>
+                            </tr>
+                        </thead>
+                        <tbody><!-- 日志数据由JS填充 --></tbody>
+                    </table>
+                    
+                    <!-- 分页控件 -->
+                    <div id="admin-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            显示 <span id="admin-log-start">1</span> - <span id="admin-log-end">20</span> 条，共 <span id="admin-log-total">0</span> 条
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="admin-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                            <div id="admin-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                            <button id="admin-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="login-log-section">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">登录日志</h3>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">筛选用户：</label>
+                            <select id="login-log-user-select" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="">全部</option>
+                            </select>
+                            <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                            <select id="login-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="10">10条</option>
+                                <option value="20" selected>20条</option>
+                                <option value="50">50条</option>
+                                <option value="100">100条</option>
+                            </select>
+                    </div>
+                </div>
+                    <table id="login-log-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>登录时间</th>
+                                <th>城市</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    
+                    <!-- 分页控件 -->
+                    <div id="login-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            显示 <span id="login-log-start">1</span> - <span id="login-log-end">20</span> 条，共 <span id="login-log-total">0</span> 条
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="login-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                            <div id="login-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                            <button id="login-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="access-log-section">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">访问日志</h3>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <label style="color: var(--muted); font-size: 0.9rem;">筛选用户：</label>
+                            <select id="access-log-user-select" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="">全部</option>
+                            </select>
+                            <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                            <select id="access-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                                <option value="10">10条</option>
+                                <option value="20" selected>20条</option>
+                                <option value="50">50条</option>
+                                <option value="100">100条</option>
+                            </select>
+                    </div>
+                </div>
+                    <table id="access-log-table">
+                        <thead>
+                            <tr>
+                                <th>用户</th>
+                                <th>访问时间</th>
+                                <th>项目ID</th>
+                                <th>IP</th>
+                                <th>城市</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    
+                    <!-- 分页控件 -->
+                    <div id="access-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
+                        <div style="color: var(--muted); font-size: 0.9rem;">
+                            显示 <span id="access-log-start">1</span> - <span id="access-log-end">20</span> 条，共 <span id="access-log-total">0</span> 条
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button id="access-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                            <div id="access-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                            <button id="access-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <!-- 项目编辑/创建模态框 -->
+    <div id="project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="project-modal-title">添加项目</div>
+            <form id="project-form">
+                <input type="hidden" id="project-id">
+                <div class="form-group">
+                    <label for="project-name"><i class="fa fa-folder"></i></label>
+                    <input type="text" id="project-name" required placeholder="项目名称">
+                </div>
+                <div class="form-group">
+                    <label for="project-description"><i class="fa fa-info-circle"></i></label>
+                    <input type="text" id="project-description" placeholder="项目描述">
+                </div>
+                <div class="form-group">
+                    <label for="project-url"><i class="fa fa-link"></i></label>
+                    <input type="text" id="project-url" placeholder="项目地址">
+                </div>
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary">保存</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-project-modal">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 权限管理模态框 -->
+    <div id="permissions-modal" class="modal">
+         <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-title" id="permissions-modal-title">管理权限</div>
+            <div class="modal-subtitle" id="permissions-modal-subtitle">为用户分配项目访问权限</div>
+            
+            <!-- 权限统计 -->
+            <div id="permissions-stats">
+                <div>
+                    <span>已分配: <span id="assigned-count">0</span> 个项目</span>
+                    <span>总项目: <span id="total-count">0</span> 个</span>
+                </div>
+            </div>
+            
+            <!-- 批量操作 -->
+            <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button type="button" class="btn btn-secondary" onclick="selectAllPermissions()">全选</button>
+                    <button type="button" class="btn btn-secondary" style="margin-left: 0.5rem;" onclick="clearAllPermissions()">取消全选</button>
+                </div>
+                <div>
+                    <input type="text" id="permission-search" placeholder="搜索项目..." onkeyup="filterPermissions()">
+                </div>
+            </div>
+            
+            <!-- 操作提示 -->
+            <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 0.8rem; margin-bottom: 1rem; font-size: 0.9rem; color: #0369a1;">
+                <i class="fa fa-info-circle" style="margin-right: 0.5rem;"></i>
+                <strong>操作提示：</strong>勾选项目为用户分配权限，取消勾选则撤销权限。使用搜索功能快速找到特定项目。
+            </div>
+            
+            <!-- 权限列表 -->
+            <div id="permissions-content" style="margin-bottom:1.2em; max-height: 300px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem;"></div>
+            
+            <div class="actions">
+                <button type="button" class="btn btn-primary" id="save-permissions-btn">保存权限</button>
+                <button type="button" class="btn btn-secondary" id="cancel-permissions-modal">取消</button>
+            </div>
+        </div>
+    </div>
+    <!-- 修改密码模态框 -->
+    <div id="change-password-modal" class="modal">
+         <div class="modal-content">
+        <div class="modal-title">修改密码</div>
+        <form id="change-password-form">
+          <div class="form-group">
+            <label for="old-password"><i class="fa fa-lock"></i></label>
+            <input type="password" id="old-password" placeholder="当前密码" required>
+            </div>
+          <div class="form-group">
+            <label for="new-password"><i class="fa fa-lock"></i></label>
+            <input type="password" id="new-password" placeholder="新密码" required>
+          </div>
+          <div class="form-group">
+            <label for="confirm-password"><i class="fa fa-lock"></i></label>
+            <input type="password" id="confirm-password" placeholder="确认新密码" required>
+          </div>
+          <div id="change-password-error" class="form-error" style="display:none;"></div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">保存</button>
+            <button type="button" class="btn btn-secondary" id="cancel-change-password-modal">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 重置密码模态框 -->
+    <div id="reset-password-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-title" id="reset-password-modal-title">重置密码</div>
+        <div class="modal-subtitle" id="reset-password-modal-subtitle">为用户设置新密码</div>
+        
+        <!-- 安全提示 -->
+        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 0.8rem; margin-bottom: 1rem; font-size: 0.9rem; color: #dc2626;">
+            <i class="fa fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+            <strong>安全提醒：</strong>重置密码后，用户需要使用新密码重新登录。请确保将新密码安全地传达给用户。
+        </div>
+        
+        <form id="reset-password-form">
+          <input type="hidden" id="reset-user-id">
+          <div class="form-group">
+            <label for="reset-new-password"><i class="fa fa-lock"></i></label>
+            <input type="password" id="reset-new-password" placeholder="新密码（至少6位）" required>
+          </div>
+          <div class="form-group">
+            <label for="reset-confirm-password"><i class="fa fa-lock"></i></label>
+            <input type="password" id="reset-confirm-password" placeholder="确认新密码" required>
+          </div>
+          <div id="reset-password-error" class="form-error" style="display:none;"></div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">重置密码</button>
+            <button type="button" class="btn btn-secondary" id="cancel-reset-password-modal">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 用户编辑模态框 -->
+    <div id="user-edit-modal" class="modal">
+      <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-title" id="user-edit-modal-title">编辑用户</div>
+        <div class="modal-subtitle" id="user-edit-modal-subtitle">管理用户信息和状态</div>
+        
+        <form id="user-edit-form">
+          <input type="hidden" id="edit-user-id">
+          
+          <!-- 基本信息 -->
+          <div class="form-group">
+            <label for="edit-user-email"><i class="fa fa-envelope"></i></label>
+            <input type="email" id="edit-user-email" placeholder="邮箱地址" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label for="edit-user-name"><i class="fa fa-user"></i></label>
+            <input type="text" id="edit-user-name" placeholder="用户姓名">
+          </div>
+          
+          <!-- 功能按钮组 -->
+          <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(102, 126, 234, 0.05); border-radius: var(--radius); border: 1px solid rgba(102, 126, 234, 0.1);">
+            <h4 style="margin: 0 0 1rem 0; color: var(--accent); font-size: 1rem;">快速操作</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+              <button type="button" class="btn btn-secondary" id="edit-reset-password-btn" style="justify-content: flex-start; text-align: left;">
+                <i class="fa fa-key" style="margin-right: 0.5rem;"></i>重置密码
+              </button>
+              <button type="button" class="btn btn-secondary" id="edit-toggle-status-btn" style="justify-content: flex-start; text-align: left;">
+                <i class="fa fa-toggle-on" style="margin-right: 0.5rem;"></i><span id="edit-status-text">禁用用户</span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="edit-toggle-admin-btn" style="justify-content: flex-start; text-align: left;">
+                <i class="fa fa-user-secret" style="margin-right: 0.5rem;"></i><span id="edit-admin-text">设为管理员</span>
+              </button>
+            </div>
+          </div>
+          
+          <div id="user-edit-error" class="form-error" style="display:none;"></div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">保存更改</button>
+            <button type="button" class="btn btn-secondary" id="cancel-user-edit-modal">取消</button>
+          </div>
+        </form>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = localStorage.getItem('jwt_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        const authHeader = { 'Authorization': `Bearer ${token}` };
+
+        let allUsers = [];
+        let allProjects = [];
+        let allProjectsForLogs = [];
+        
+        // 分页状态
+        let userPagination = { currentPage: 1, pageSize: 20, total: 0, filteredUsers: [] };
+        let projectPagination = { currentPage: 1, pageSize: 20, total: 0 };
+        let adminLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
+        let loginLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
+        let accessLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
+
+        const usersTableBody = document.querySelector('#users-table tbody');
+        const projectsTableBody = document.querySelector('#projects-table tbody');
+        const projectModal = document.getElementById('project-modal');
+        const projectForm = document.getElementById('project-form');
+        const permissionsModal = document.getElementById('permissions-modal');
+        const adminLogTableBody = document.querySelector('#admin-log-table tbody');
+
+        // 显示当前登录管理员姓名或邮箱
+        try {
+            const me = await fetch('/api/users/me', { headers: authHeader });
+            if (me.ok) {
+                const user = await me.json();
+                document.getElementById('user-info').innerText = user.name || user.email;
+            } else {
+                document.getElementById('user-info').innerText = '';
+            }
+        } catch (e) {
+            document.getElementById('user-info').innerText = '';
+        }
+
+        // API请求函数
+        const apiFetch = async (url, options = {}) => {
+            const response = await fetch(url, {
+                headers: { ...authHeader, 'Content-Type': 'application/json' },
+                ...options
+            });
+            if (response.status === 401 || response.status === 403) {
+                 localStorage.removeItem('jwt_token');
+                 window.location.href = '/login';
+                 throw new Error('认证失败');
+            }
+            if (!response.ok && response.status !== 204) {
+                 const err = await response.json();
+                 throw new Error(err.message || '请求失败');
+            }
+            return response.status === 204 ? null : response.json();
+        };
+
+        // 渲染函数
+        const renderUsers = async () => {
+            // 搜索过滤
+            const searchTerm = document.getElementById('user-search').value.toLowerCase();
+            userPagination.filteredUsers = allUsers.filter(user => 
+                user.email.toLowerCase().includes(searchTerm) || 
+                (user.name && user.name.toLowerCase().includes(searchTerm))
+            );
+            
+            // 分页计算
+            const startIndex = (userPagination.currentPage - 1) * userPagination.pageSize;
+            const endIndex = startIndex + userPagination.pageSize;
+            const paginatedUsers = userPagination.filteredUsers.slice(startIndex, endIndex);
+            
+            // 更新分页信息
+            userPagination.total = userPagination.filteredUsers.length;
+            document.getElementById('user-start').textContent = startIndex + 1;
+            document.getElementById('user-end').textContent = Math.min(endIndex, userPagination.total);
+            document.getElementById('user-total').textContent = userPagination.total;
+            
+            // 渲染表格
+            usersTableBody.innerHTML = '';
+            for (const user of paginatedUsers) {
+                // 获取用户项目数量
+                let projectCount = 0;
+                try {
+                    const userProjects = await apiFetch(`/api/users/${user.id}/projects`);
+                    projectCount = userProjects.length;
+                } catch (e) {
+                    projectCount = 0;
+                }
+                
+                const isSuperAdmin = user.isSuperAdmin;
+                const row = `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.email}</td>
+                        <td>${user.name || ''}</td>
+                        <td>${user.role}</td>
+                        <td><span style="color: ${projectCount > 0 ? '#059669' : '#6b7280'}; font-weight: 500;">${projectCount} 个项目</span></td>
+                        <td>${new Date(user.createdAt).toLocaleString()}</td>
+                        <td class="actions">
+                            <button class="btn btn-primary" onclick="editUser(${user.id})">
+                                <i class="fa fa-edit" style="margin-right: 0.3em;"></i>编辑
+                            </button>
+                            <button class="btn btn-secondary" onclick="managePermissions(${user.id})" style="${user.role === 'admin' ? 'background: #dbeafe; color: #1d4ed8; font-weight: 600;' : ''}">
+                                <i class="fa fa-key" style="margin-right: 0.3em;"></i>管理权限
+                            </button>
+                        </td>
+                    </tr>`;
+                usersTableBody.innerHTML += row;
+            }
+            
+            // 更新分页控件
+            updateUserPagination();
+        };
+
+        const renderProjects = () => {
+            // 分页计算
+            const startIndex = (projectPagination.currentPage - 1) * projectPagination.pageSize;
+            const endIndex = startIndex + projectPagination.pageSize;
+            const paginatedProjects = allProjects.slice(startIndex, endIndex);
+            
+            // 更新分页信息
+            projectPagination.total = allProjects.length;
+            document.getElementById('project-start').textContent = startIndex + 1;
+            document.getElementById('project-end').textContent = Math.min(endIndex, projectPagination.total);
+            document.getElementById('project-total').textContent = projectPagination.total;
+            
+            projectsTableBody.innerHTML = '';
+            paginatedProjects.forEach(project => {
+                const row = `
+                    <tr>
+                        <td>${project.id}</td>
+                        <td>${project.name}</td>
+                        <td>${project.description || ''}</td>
+                        <td>${project.url || ''}</td>
+                        <td class="actions">
+                            <button class="btn btn-secondary" onclick="editProject(${project.id})">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteProject(${project.id})">删除</button>
+                        </td>
+                    </tr>`;
+                projectsTableBody.innerHTML += row;
+            });
+            
+            // 更新分页控件
+            updateProjectPagination();
+        };
+        
+        // 分页控件更新函数
+        function updateUserPagination() {
+            const totalPages = Math.ceil(userPagination.total / userPagination.pageSize);
+            const pageNumbers = document.getElementById('user-page-numbers');
+            const prevBtn = document.getElementById('user-prev');
+            const nextBtn = document.getElementById('user-next');
+            
+            // 更新按钮状态
+            prevBtn.disabled = userPagination.currentPage <= 1;
+            nextBtn.disabled = userPagination.currentPage >= totalPages;
+            
+            // 生成页码按钮
+            pageNumbers.innerHTML = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, userPagination.currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn ${i === userPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+                pageBtn.style.padding = '0.5rem 0.8rem';
+                pageBtn.style.fontSize = '0.9rem';
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    userPagination.currentPage = i;
+                    renderUsers();
+                };
+                pageNumbers.appendChild(pageBtn);
+            }
+        }
+        
+        function updateProjectPagination() {
+            const totalPages = Math.ceil(projectPagination.total / projectPagination.pageSize);
+            const pageNumbers = document.getElementById('project-page-numbers');
+            const prevBtn = document.getElementById('project-prev');
+            const nextBtn = document.getElementById('project-next');
+            
+            prevBtn.disabled = projectPagination.currentPage <= 1;
+            nextBtn.disabled = projectPagination.currentPage >= totalPages;
+            
+            pageNumbers.innerHTML = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, projectPagination.currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn ${i === projectPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+                pageBtn.style.padding = '0.5rem 0.8rem';
+                pageBtn.style.fontSize = '0.9rem';
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    projectPagination.currentPage = i;
+                    renderProjects();
+                };
+                pageNumbers.appendChild(pageBtn);
+            }
+        }
+        
+        // 加载初始数据
+        const loadInitialData = async () => {
+            try {
+                const [users, projects] = await Promise.all([
+                    apiFetch('/api/users'),
+                    apiFetch('/api/projects')
+                ]);
+                allUsers = users;
+                allProjects = projects;
+                renderUsers();
+                renderProjects();
+            } catch (error) {
+                alert(`加载数据失败: ${error.message}`);
+            }
+        };
+
+        // --- 项目管理 ---
+        window.editProject = (id) => {
+            const project = allProjects.find(p => p.id === id);
+            document.getElementById('project-modal-title').innerText = '编辑项目';
+            document.getElementById('project-id').value = project.id;
+            document.getElementById('project-name').value = project.name;
+            document.getElementById('project-description').value = project.description || '';
+            document.getElementById('project-url').value = project.url || '';
+            projectModal.style.display = 'flex';
+        };
+
+        document.getElementById('add-project-btn').addEventListener('click', () => {
+            document.getElementById('project-modal-title').innerText = '添加项目';
+            projectForm.reset();
+            document.getElementById('project-id').value = '';
+            projectModal.style.display = 'flex';
+        });
+        
+        document.getElementById('cancel-project-modal').addEventListener('click', () => {
+             projectModal.style.display = 'none';
+        });
+
+        projectForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('project-id').value;
+            const data = {
+                name: document.getElementById('project-name').value,
+                description: document.getElementById('project-description').value,
+                url: document.getElementById('project-url').value,
+            };
+
+            try {
+                if (id) { // 更新
+                    await apiFetch(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+                } else { // 创建
+                    await apiFetch('/api/projects', { method: 'POST', body: JSON.stringify(data) });
+                }
+                projectModal.style.display = 'none';
+                projectPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (error) {
+                alert(`操作失败: ${error.message}`);
+            }
+        });
+
+        window.deleteProject = async (id) => {
+            if (!confirm('确定要删除这个项目吗？')) return;
+            try {
+                await apiFetch(`/api/projects/${id}`, { method: 'DELETE' });
+                projectPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (error) {
+                alert(`删除失败: ${error.message}`);
+            }
+        };
+
+        // --- 权限管理 ---
+        let currentUserId = null;
+        let currentUserProjects = [];
+        let pendingPermissions = new Set();
+        
+        window.managePermissions = async (userId) => {
+            currentUserId = userId;
+            const user = allUsers.find(u => u.id === userId);
+            const isAdminUser = user.role === 'admin' || user.isSuperAdmin;
+            
+            document.getElementById('permissions-modal-title').innerText = `为 ${user.name || user.email} 分配项目权限`;
+            document.getElementById('permissions-modal-subtitle').innerText = isAdminUser 
+                ? `管理管理员用户的项目访问权限` 
+                : `管理用户的项目访问权限`;
+            
+            // 获取该用户已有的权限
+            try {
+                currentUserProjects = await apiFetch(`/api/users/${userId}/projects`);
+                pendingPermissions = new Set(currentUserProjects.map(p => p.id));
+            } catch (e) {
+                alert('获取用户已有权限失败: ' + e.message);
+                currentUserProjects = [];
+                pendingPermissions = new Set();
+            }
+            
+            renderPermissionsList();
+            updatePermissionsStats();
+            permissionsModal.style.display = 'flex';
+        };
+        
+        function renderPermissionsList() {
+            let contentHtml = '';
+            allProjects.forEach(project => {
+                const checked = pendingPermissions.has(project.id) ? 'checked' : '';
+                contentHtml += `
+                    <div class="permission-item" data-project-name="${project.name.toLowerCase()}">
+                        <input type="checkbox" id="proj-${project.id}" onchange="togglePermission(${project.id}, this.checked)" ${checked}>
+                        <label for="proj-${project.id}">
+                            <strong>${project.name}</strong>
+                            ${project.description ? `<br><small style="color: #6b7280;">${project.description}</small>` : ''}
+                        </label>
+                    </div>
+                `;
+            });
+            document.getElementById('permissions-content').innerHTML = contentHtml;
+        }
+        
+        function updatePermissionsStats() {
+            document.getElementById('assigned-count').innerText = pendingPermissions.size;
+            document.getElementById('total-count').innerText = allProjects.length;
+        }
+        
+        window.togglePermission = (projectId, assigned) => {
+            if (assigned) {
+                pendingPermissions.add(projectId);
+            } else {
+                pendingPermissions.delete(projectId);
+            }
+            updatePermissionsStats();
+        };
+        
+        window.selectAllPermissions = () => {
+            allProjects.forEach(project => {
+                pendingPermissions.add(project.id);
+                const checkbox = document.getElementById(`proj-${project.id}`);
+                if (checkbox) checkbox.checked = true;
+            });
+            updatePermissionsStats();
+        };
+        
+        window.clearAllPermissions = () => {
+            pendingPermissions.clear();
+            allProjects.forEach(project => {
+                const checkbox = document.getElementById(`proj-${project.id}`);
+                if (checkbox) checkbox.checked = false;
+            });
+            updatePermissionsStats();
+        };
+        
+        window.filterPermissions = () => {
+            const searchTerm = document.getElementById('permission-search').value.toLowerCase();
+            const items = document.querySelectorAll('.permission-item');
+            
+            items.forEach(item => {
+                const projectName = item.getAttribute('data-project-name');
+                if (projectName.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        };
+        
+        document.getElementById('save-permissions-btn').addEventListener('click', async () => {
+            if (!currentUserId) return;
+            
+            try {
+                // 计算需要添加和删除的权限
+                const currentProjectIds = new Set(currentUserProjects.map(p => p.id));
+                const newProjectIds = pendingPermissions;
+                
+                const toAdd = Array.from(newProjectIds).filter(id => !currentProjectIds.has(id));
+                const toRemove = Array.from(currentProjectIds).filter(id => !newProjectIds.has(id));
+                
+                // 批量处理权限变更
+                const promises = [];
+                
+                // 添加新权限
+                for (const projectId of toAdd) {
+                    promises.push(
+                        apiFetch('/api/projects/assign', {
+                    method: 'POST',
+                            body: JSON.stringify({ userId: currentUserId, projectId })
+                        })
+                    );
+                }
+                
+                // 删除旧权限
+                for (const projectId of toRemove) {
+                    promises.push(
+                        apiFetch('/api/projects/revoke', {
+                            method: 'POST',
+                            body: JSON.stringify({ userId: currentUserId, projectId })
+                        })
+                    );
+                }
+                
+                await Promise.all(promises);
+                
+                alert(`权限更新成功！添加了 ${toAdd.length} 个权限，删除了 ${toRemove.length} 个权限。`);
+                permissionsModal.style.display = 'none';
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 重新加载数据以更新权限状态
+                
+            } catch (error) {
+                 alert(`权限操作失败: ${error.message}`);
+            }
+        });
+        
+        document.getElementById('cancel-permissions-modal').addEventListener('click', () => {
+            permissionsModal.style.display = 'none';
+            currentUserId = null;
+            currentUserProjects = [];
+            pendingPermissions.clear();
+        });
+
+        window.resetPasswordModal = (userId) => {
+            const user = allUsers.find(u => u.id === userId);
+            document.getElementById('reset-password-modal-title').innerText = `重置 ${user.name || user.email} 的密码`;
+            document.getElementById('reset-password-modal-subtitle').innerText = `为用户设置新的登录密码`;
+            document.getElementById('reset-user-id').value = userId;
+            document.getElementById('reset-password-form').reset();
+            document.getElementById('reset-password-error').style.display = 'none';
+            document.getElementById('reset-password-modal').style.display = 'flex';
+            document.getElementById('reset-new-password').focus();
+        };
+
+        // 重置密码弹窗事件处理
+        document.getElementById('cancel-reset-password-modal').addEventListener('click', () => {
+            document.getElementById('reset-password-modal').style.display = 'none';
+            document.getElementById('reset-password-form').reset();
+            document.getElementById('reset-password-error').style.display = 'none';
+        });
+
+        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('reset-user-id').value;
+            const newPassword = document.getElementById('reset-new-password').value.trim();
+            const confirmPassword = document.getElementById('reset-confirm-password').value.trim();
+            const errorDiv = document.getElementById('reset-password-error');
+
+            // 表单验证
+            if (newPassword.length < 6) {
+                errorDiv.textContent = '新密码不能少于6位';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = '两次输入的新密码不一致';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                await apiFetch(`/api/users/${userId}/reset-password`, {
+                    method: 'POST',
+                    body: JSON.stringify({ newPassword })
+                });
+                
+                // 成功提示
+                alert('密码重置成功！');
+                document.getElementById('reset-password-modal').style.display = 'none';
+                document.getElementById('reset-password-form').reset();
+                errorDiv.style.display = 'none';
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 刷新用户列表
+                
+            } catch (error) {
+                errorDiv.textContent = `重置密码失败: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        window.deactivateUser = async (userId) => {
+            if (!confirm('确定要禁用该用户吗？')) return;
+            try {
+                await apiFetch(`/api/users/${userId}/deactivate`, { method: 'PATCH' });
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (e) {
+                alert('禁用失败: ' + e.message);
+            }
+        };
+
+        window.activateUser = async (userId) => {
+            try {
+                await apiFetch(`/api/users/${userId}/activate`, { method: 'PATCH' });
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (e) {
+                alert('启用失败: ' + e.message);
+            }
+        };
+
+        window.setAdmin = async (userId) => {
+            try {
+                await apiFetch(`/api/users/${userId}/set-admin`, { method: 'PATCH' });
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (e) {
+                alert('设为管理员失败: ' + e.message);
+            }
+        };
+
+        window.unsetAdmin = async (userId) => {
+            try {
+                await apiFetch(`/api/users/${userId}/unset-admin`, { method: 'PATCH' });
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData();
+            } catch (e) {
+                alert('取消管理员失败: ' + e.message);
+            }
+        };
+
+        // --- 用户编辑功能 ---
+        let currentEditUser = null;
+        
+        window.editUser = (userId) => {
+            currentEditUser = allUsers.find(u => u.id === userId);
+            if (!currentEditUser) return;
+            
+            // 填充表单数据
+            document.getElementById('edit-user-id').value = currentEditUser.id;
+            document.getElementById('edit-user-email').value = currentEditUser.email;
+            document.getElementById('edit-user-name').value = currentEditUser.name || '';
+            
+            // 更新弹窗标题
+            document.getElementById('user-edit-modal-title').innerText = `编辑用户 - ${currentEditUser.name || currentEditUser.email}`;
+            
+            // 更新按钮状态
+            updateEditButtons();
+            
+            // 显示弹窗
+            document.getElementById('user-edit-modal').style.display = 'flex';
+            document.getElementById('user-edit-error').style.display = 'none';
+        };
+        
+        function updateEditButtons() {
+            if (!currentEditUser) return;
+            
+            const isSuperAdmin = currentEditUser.isSuperAdmin;
+            const statusBtn = document.getElementById('edit-toggle-status-btn');
+            const adminBtn = document.getElementById('edit-toggle-admin-btn');
+            const resetBtn = document.getElementById('edit-reset-password-btn');
+            
+            // 重置密码按钮
+            if (isSuperAdmin) {
+                resetBtn.disabled = true;
+                resetBtn.style.opacity = '0.5';
+                resetBtn.innerHTML = '<i class="fa fa-key" style="margin-right: 0.5rem;"></i>主管理员不可重置';
+            } else {
+                resetBtn.disabled = false;
+                resetBtn.style.opacity = '1';
+                resetBtn.innerHTML = '<i class="fa fa-key" style="margin-right: 0.5rem;"></i>重置密码';
+            }
+            
+            // 状态切换按钮
+            if (isSuperAdmin) {
+                statusBtn.disabled = true;
+                statusBtn.style.opacity = '0.5';
+                document.getElementById('edit-status-text').innerText = '主管理员不可禁用';
+            } else {
+                statusBtn.disabled = false;
+                statusBtn.style.opacity = '1';
+                document.getElementById('edit-status-text').innerText = currentEditUser.isActive ? '禁用用户' : '启用用户';
+            }
+            
+            // 管理员切换按钮
+            if (isSuperAdmin) {
+                adminBtn.disabled = true;
+                adminBtn.style.opacity = '0.5';
+                document.getElementById('edit-admin-text').innerText = '主管理员';
+            } else {
+                adminBtn.disabled = false;
+                adminBtn.style.opacity = '1';
+                document.getElementById('edit-admin-text').innerText = currentEditUser.role === 'admin' ? '取消管理员' : '设为管理员';
+            }
+        }
+        
+        // 用户编辑弹窗事件绑定
+        document.getElementById('cancel-user-edit-modal').onclick = function() {
+            document.getElementById('user-edit-modal').style.display = 'none';
+            currentEditUser = null;
+        };
+        
+        // 重置密码按钮
+        document.getElementById('edit-reset-password-btn').onclick = function() {
+            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
+            resetPasswordModal(currentEditUser.id);
+        };
+        
+        // 状态切换按钮
+        document.getElementById('edit-toggle-status-btn').onclick = async function() {
+            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
+            
+            try {
+                if (currentEditUser.isActive) {
+                    await apiFetch(`/api/users/${currentEditUser.id}/deactivate`, { method: 'PATCH' });
+                    currentEditUser.isActive = false;
+                } else {
+                    await apiFetch(`/api/users/${currentEditUser.id}/activate`, { method: 'PATCH' });
+                    currentEditUser.isActive = true;
+                }
+                updateEditButtons();
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 刷新用户列表
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        };
+        
+        // 管理员切换按钮
+        document.getElementById('edit-toggle-admin-btn').onclick = async function() {
+            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
+            
+            try {
+                if (currentEditUser.role === 'admin') {
+                    await apiFetch(`/api/users/${currentEditUser.id}/unset-admin`, { method: 'PATCH' });
+                    currentEditUser.role = 'user';
+                } else {
+                    await apiFetch(`/api/users/${currentEditUser.id}/set-admin`, { method: 'PATCH' });
+                    currentEditUser.role = 'admin';
+                }
+                updateEditButtons();
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 刷新用户列表
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        };
+        
+        // 保存用户信息
+        document.getElementById('user-edit-form').onsubmit = async function(e) {
+            e.preventDefault();
+            if (!currentEditUser) return;
+            
+            const newName = document.getElementById('edit-user-name').value.trim();
+            const errorDiv = document.getElementById('user-edit-error');
+            
+            try {
+                await apiFetch(`/api/users/${currentEditUser.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ name: newName })
+                });
+                
+                alert('用户信息更新成功！');
+                document.getElementById('user-edit-modal').style.display = 'none';
+                currentEditUser = null;
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 刷新用户列表
+                
+            } catch (error) {
+                errorDiv.textContent = `更新失败: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        // Tab 按钮
+        const tabDashboard = document.getElementById('tab-dashboard');
+        const tabUsers = document.getElementById('tab-users');
+        const tabProjects = document.getElementById('tab-projects');
+        const tabLogs = document.getElementById('tab-logs');
+        const tabLoginLogs = document.getElementById('tab-login-logs');
+        const tabAccessLogs = document.getElementById('tab-access-logs');
+        // section区块
+        const dashboardSection = document.getElementById('dashboard-section');
+        const userSection = document.getElementById('user-management');
+        const projectSection = document.getElementById('project-management');
+        const adminLogSection = document.getElementById('admin-log-section');
+        const loginLogSection = document.getElementById('login-log-section');
+        const accessLogSection = document.getElementById('access-log-section');
+        // tab与section映射
+        const tabMap = [
+            {tab: tabDashboard, section: dashboardSection, title: 'Dashboard', async: false},
+            {tab: tabUsers, section: userSection, title: '用户管理', async: false},
+            {tab: tabProjects, section: projectSection, title: '项目管理', async: false},
+            {tab: tabLogs, section: adminLogSection, title: '操作日志', async: false},
+            {tab: tabLoginLogs, section: loginLogSection, title: '登录日志', async: true},
+            {tab: tabAccessLogs, section: accessLogSection, title: '访问日志', async: true},
+        ];
+        // 统一tab切换函数
+        function switchTab(idx) {
+            tabMap.forEach((item, i) => {
+                if (item.tab) item.tab.classList.remove('nav-item-active');
+                if (item.section) item.section.style.display = 'none';
+            });
+            if (tabMap[idx].tab) tabMap[idx].tab.classList.add('nav-item-active');
+            if (tabMap[idx].section) tabMap[idx].section.style.display = 'block';
+            document.getElementById('pageTitle').innerText = tabMap[idx].title;
+            // 日志tab切换时加载数据
+            if (tabMap[idx].async && idx === 4) {
+                loadUsersForLogs().then(renderLoginLogs);
+            } else if (tabMap[idx].async && idx === 5) {
+                loadUsersForLogs().then(renderAccessLogs);
+            } else if (idx === 3) { // 操作日志
+                renderAdminLogs();
+            }
+        }
+        // 绑定事件
+        tabMap.forEach((item, idx) => {
+            if (item.tab) {
+                item.tab.onclick = (e) => {
+                    e.preventDefault(); // 阻止a标签默认跳转
+                    // Dashboard特殊处理：刷新数据
+                    if (idx === 0) {
+                        loadDashboardStats();
+                    }
+                    switchTab(idx);
+                };
+            }
+        });
+        // 默认显示Dashboard
+        switchTab(0);
+        // 登录日志和访问日志渲染
+        const loginLogUserSelect = document.getElementById('login-log-user-select');
+        const accessLogUserSelect = document.getElementById('access-log-user-select');
+        const loginLogTableBody = document.querySelector('#login-log-table tbody');
+        const accessLogTableBody = document.querySelector('#access-log-table tbody');
+        let allUsersForLogs = [];
+        // 加载用户和项目下拉
+        async function loadUsersForLogs() {
+            allUsersForLogs = await apiFetch('/api/users');
+            allProjectsForLogs = await apiFetch('/api/projects');
+            [loginLogUserSelect, accessLogUserSelect].forEach(select => {
+                select.innerHTML = '<option value="">全部</option>' + allUsersForLogs.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('');
+            });
+        }
+        // 渲染登录日志
+        async function renderLoginLogs() {
+            const userId = loginLogUserSelect.value;
+            const url = userId ? `/api/users/admin/user-login-logs?userId=${userId}` : '/api/users/admin/user-login-logs';
+            const logs = await apiFetch(url);
+            
+            // 分页计算
+            const startIndex = (loginLogPagination.currentPage - 1) * loginLogPagination.pageSize;
+            const endIndex = startIndex + loginLogPagination.pageSize;
+            const paginatedLogs = logs.slice(startIndex, endIndex);
+            
+            // 更新分页信息
+            loginLogPagination.total = logs.length;
+            document.getElementById('login-log-start').textContent = startIndex + 1;
+            document.getElementById('login-log-end').textContent = Math.min(endIndex, loginLogPagination.total);
+            document.getElementById('login-log-total').textContent = loginLogPagination.total;
+            
+            loginLogTableBody.innerHTML = paginatedLogs.map(log => {
+                const user = allUsersForLogs.find(u => u.id === log.userId);
+                return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${log.city || ''}</td><td>${log.ip || ''}</td></tr>`;
+            }).join('');
+            
+            // 更新分页控件
+            updateLoginLogPagination();
+        }
+        // 渲染访问日志
+        async function renderAccessLogs() {
+            const userId = accessLogUserSelect.value;
+            const url = userId ? `/api/users/admin/user-project-access-logs?userId=${userId}` : '/api/users/admin/user-project-access-logs';
+            const logs = await apiFetch(url);
+            const filteredLogs = logs.filter(log => log.projectId !== 0);
+            
+            // 分页计算
+            const startIndex = (accessLogPagination.currentPage - 1) * accessLogPagination.pageSize;
+            const endIndex = startIndex + accessLogPagination.pageSize;
+            const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+            
+            // 更新分页信息
+            accessLogPagination.total = filteredLogs.length;
+            document.getElementById('access-log-start').textContent = startIndex + 1;
+            document.getElementById('access-log-end').textContent = Math.min(endIndex, accessLogPagination.total);
+            document.getElementById('access-log-total').textContent = accessLogPagination.total;
+            
+            accessLogTableBody.innerHTML = paginatedLogs.map(log => {
+                    const user = allUsersForLogs.find(u => u.id === log.userId);
+                    const project = allProjectsForLogs.find(p => p.id === log.projectId);
+                    return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${project ? project.name : log.projectId}</td><td>${log.ip || ''}</td><td>${log.city || ''}</td></tr>`;
+                }).join('');
+            
+            // 更新分页控件
+            updateAccessLogPagination();
+        }
+        // 下拉和Tab事件绑定
+        loginLogUserSelect.onchange = () => {
+            loginLogPagination.currentPage = 1; // 重置到第一页
+            renderLoginLogs();
+        };
+        accessLogUserSelect.onchange = () => {
+            accessLogPagination.currentPage = 1; // 重置到第一页
+            renderAccessLogs();
+        };
+        
+        // 日志分页控件更新函数
+        function updateLoginLogPagination() {
+            const totalPages = Math.ceil(loginLogPagination.total / loginLogPagination.pageSize);
+            const pageNumbers = document.getElementById('login-log-page-numbers');
+            const prevBtn = document.getElementById('login-log-prev');
+            const nextBtn = document.getElementById('login-log-next');
+            
+            prevBtn.disabled = loginLogPagination.currentPage <= 1;
+            nextBtn.disabled = loginLogPagination.currentPage >= totalPages;
+            
+            pageNumbers.innerHTML = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, loginLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn ${i === loginLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+                pageBtn.style.padding = '0.5rem 0.8rem';
+                pageBtn.style.fontSize = '0.9rem';
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    loginLogPagination.currentPage = i;
+                    renderLoginLogs();
+                };
+                pageNumbers.appendChild(pageBtn);
+            }
+        }
+        
+        function updateAccessLogPagination() {
+            const totalPages = Math.ceil(accessLogPagination.total / accessLogPagination.pageSize);
+            const pageNumbers = document.getElementById('access-log-page-numbers');
+            const prevBtn = document.getElementById('access-log-prev');
+            const nextBtn = document.getElementById('access-log-next');
+            
+            prevBtn.disabled = accessLogPagination.currentPage <= 1;
+            nextBtn.disabled = accessLogPagination.currentPage >= totalPages;
+            
+            pageNumbers.innerHTML = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, accessLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn ${i === accessLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+                pageBtn.style.padding = '0.5rem 0.8rem';
+                pageBtn.style.fontSize = '0.9rem';
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    accessLogPagination.currentPage = i;
+                    renderAccessLogs();
+                };
+                pageNumbers.appendChild(pageBtn);
+            }
+        }
+        
+        // 日志分页事件绑定
+        document.getElementById('login-log-page-size').addEventListener('change', (e) => {
+            loginLogPagination.pageSize = parseInt(e.target.value);
+            loginLogPagination.currentPage = 1;
+            renderLoginLogs();
+        });
+        
+        document.getElementById('login-log-prev').addEventListener('click', () => {
+            if (loginLogPagination.currentPage > 1) {
+                loginLogPagination.currentPage--;
+                renderLoginLogs();
+            }
+        });
+        
+        document.getElementById('login-log-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(loginLogPagination.total / loginLogPagination.pageSize);
+            if (loginLogPagination.currentPage < totalPages) {
+                loginLogPagination.currentPage++;
+                renderLoginLogs();
+            }
+        });
+        
+        document.getElementById('access-log-page-size').addEventListener('change', (e) => {
+            accessLogPagination.pageSize = parseInt(e.target.value);
+            accessLogPagination.currentPage = 1;
+            renderAccessLogs();
+        });
+        
+        document.getElementById('access-log-prev').addEventListener('click', () => {
+            if (accessLogPagination.currentPage > 1) {
+                accessLogPagination.currentPage--;
+                renderAccessLogs();
+            }
+        });
+        
+        document.getElementById('access-log-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(accessLogPagination.total / accessLogPagination.pageSize);
+            if (accessLogPagination.currentPage < totalPages) {
+                accessLogPagination.currentPage++;
+                renderAccessLogs();
+            }
+        });
+
+        // Dashboard数据渲染
+        async function loadDashboardStats() {
+            const stats = await apiFetch('/api/users/admin/dashboard-stats');
+            document.getElementById('stat-user-count').innerText = stats.userCount;
+            document.getElementById('stat-project-count').innerText = stats.projectCount;
+            // 项目访问次数
+            const projectMap = {};
+            stats.projects.forEach(p => { projectMap[p.id] = p.name; });
+            const projectAccessTbody = document.querySelector('#dashboard-project-access-table tbody');
+            projectAccessTbody.innerHTML = stats.projectAccess
+                .filter(pa => pa.projectId !== 0)
+                .map(pa => `<tr><td>${projectMap[pa.projectId] || pa.projectId}</td><td>${pa._count.projectId}</td></tr>`).join('');
+            // 用户登录次数
+            const userMap = {};
+            stats.users.forEach(u => { userMap[u.id] = u.name || u.email; });
+            const userLoginTbody = document.querySelector('#dashboard-user-login-table tbody');
+            userLoginTbody.innerHTML = stats.userLogin.map(ul => `<tr><td>${userMap[ul.userId] || ul.userId}</td><td>${ul._count.userId}</td></tr>`).join('');
+            // 城市登录次数
+            const cityLoginTbody = document.querySelector('#dashboard-city-login-table tbody');
+            cityLoginTbody.innerHTML = stats.cityLogin
+                .filter(cl => cl.city && cl.city !== '')
+                .map(cl => `<tr><td>${cl.city}</td><td>${cl._count.city}</td></tr>`).join('');
+        }
+
+        // 渲染操作日志
+        async function renderAdminLogs() {
+            const logs = await apiFetch('/api/users/admin-logs');
+            
+            // 分页计算
+            const startIndex = (adminLogPagination.currentPage - 1) * adminLogPagination.pageSize;
+            const endIndex = startIndex + adminLogPagination.pageSize;
+            const paginatedLogs = logs.slice(startIndex, endIndex);
+            
+            // 更新分页信息
+            adminLogPagination.total = logs.length;
+            document.getElementById('admin-log-start').textContent = startIndex + 1;
+            document.getElementById('admin-log-end').textContent = Math.min(endIndex, adminLogPagination.total);
+            document.getElementById('admin-log-total').textContent = adminLogPagination.total;
+            
+            adminLogTableBody.innerHTML = paginatedLogs.map(log => `
+                <tr>
+                    <td>${new Date(log.createdAt).toLocaleString()}</td>
+                    <td>${log.adminId}</td>
+                    <td>${log.action}</td>
+                    <td>${log.objectType}</td>
+                    <td>${log.objectId}</td>
+                    <td>${log.details || ''}</td>
+                </tr>
+            `).join('');
+            
+            // 更新分页控件
+            updateAdminLogPagination();
+        }
+        
+        // 操作日志分页控件更新函数
+        function updateAdminLogPagination() {
+            const totalPages = Math.ceil(adminLogPagination.total / adminLogPagination.pageSize);
+            const pageNumbers = document.getElementById('admin-log-page-numbers');
+            const prevBtn = document.getElementById('admin-log-prev');
+            const nextBtn = document.getElementById('admin-log-next');
+            
+            prevBtn.disabled = adminLogPagination.currentPage <= 1;
+            nextBtn.disabled = adminLogPagination.currentPage >= totalPages;
+            
+            pageNumbers.innerHTML = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, adminLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `btn ${i === adminLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+                pageBtn.style.padding = '0.5rem 0.8rem';
+                pageBtn.style.fontSize = '0.9rem';
+                pageBtn.textContent = i;
+                pageBtn.onclick = () => {
+                    adminLogPagination.currentPage = i;
+                    renderAdminLogs();
+                };
+                pageNumbers.appendChild(pageBtn);
+            }
+        }
+        
+        // 操作日志分页事件绑定
+        document.getElementById('admin-log-page-size').addEventListener('change', (e) => {
+            adminLogPagination.pageSize = parseInt(e.target.value);
+            adminLogPagination.currentPage = 1;
+            renderAdminLogs();
+        });
+        
+        document.getElementById('admin-log-prev').addEventListener('click', () => {
+            if (adminLogPagination.currentPage > 1) {
+                adminLogPagination.currentPage--;
+                renderAdminLogs();
+            }
+        });
+        
+        document.getElementById('admin-log-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(adminLogPagination.total / adminLogPagination.pageSize);
+            if (adminLogPagination.currentPage < totalPages) {
+                adminLogPagination.currentPage++;
+                renderAdminLogs();
+            }
+        });
+
+        // --- 初始化 ---
+        loadInitialData();
+        loadDashboardStats();
+        switchTab(0);
+
+        // 用户搜索和分页事件绑定
+        document.getElementById('user-search').addEventListener('input', () => {
+            userPagination.currentPage = 1; // 重置到第一页
+            renderUsers();
+        });
+        
+        document.getElementById('user-page-size').addEventListener('change', (e) => {
+            userPagination.pageSize = parseInt(e.target.value);
+            userPagination.currentPage = 1;
+            renderUsers();
+        });
+        
+        document.getElementById('user-prev').addEventListener('click', () => {
+            if (userPagination.currentPage > 1) {
+                userPagination.currentPage--;
+                renderUsers();
+            }
+        });
+        
+        document.getElementById('user-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(userPagination.total / userPagination.pageSize);
+            if (userPagination.currentPage < totalPages) {
+                userPagination.currentPage++;
+                renderUsers();
+            }
+        });
+        
+        // 项目分页事件绑定
+        document.getElementById('project-page-size').addEventListener('change', (e) => {
+            projectPagination.pageSize = parseInt(e.target.value);
+            projectPagination.currentPage = 1;
+            renderProjects();
+        });
+        
+        document.getElementById('project-prev').addEventListener('click', () => {
+            if (projectPagination.currentPage > 1) {
+                projectPagination.currentPage--;
+                renderProjects();
+            }
+        });
+        
+        document.getElementById('project-next').addEventListener('click', () => {
+            const totalPages = Math.ceil(projectPagination.total / projectPagination.pageSize);
+            if (projectPagination.currentPage < totalPages) {
+                projectPagination.currentPage++;
+                renderProjects();
+            }
+        });
+
+        // 顶部栏下拉菜单逻辑
+        const dropdownToggle = document.getElementById('admin-dropdown').querySelector('.dropdown-toggle');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdown = document.getElementById('admin-dropdown');
+        
+        dropdownToggle.onclick = function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+            dropdownMenu.classList.toggle('show');
+        };
+        
+        document.body.addEventListener('click', function() {
+            dropdown.classList.remove('active');
+            dropdownMenu.classList.remove('show');
+        });
+        // "修改密码"点击事件
+        document.getElementById('change-password-btn').onclick = function() {
+            document.getElementById('change-password-modal').style.display = 'flex';
+            document.getElementById('old-password').focus();
+        };
+        // 关闭修改密码弹窗
+        document.getElementById('cancel-change-password-modal').onclick = function() {
+            document.getElementById('change-password-modal').style.display = 'none';
+            document.getElementById('change-password-form').reset();
+            document.getElementById('change-password-error').style.display = 'none';
+        };
+        // 提交修改密码
+        document.getElementById('change-password-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('old-password').value.trim();
+            const newPassword = document.getElementById('new-password').value.trim();
+            const confirmPassword = document.getElementById('confirm-password').value.trim();
+            const errorDiv = document.getElementById('change-password-error');
+            if (newPassword.length < 6) {
+                errorDiv.textContent = '新密码不能少于6位';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = '两次输入的新密码不一致';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            try {
+                const res = await fetch('/api/users/me/change-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
+                    body: JSON.stringify({ oldPassword, newPassword })
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    errorDiv.textContent = data.message || '修改失败';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+                alert('密码修改成功，请重新登录');
+                localStorage.removeItem('jwt_token');
+                window.location.href = '/login';
+            } catch (err) {
+                errorDiv.textContent = '请求失败，请重试';
+                errorDiv.style.display = 'block';
+            }
+        };
+        // "退出登录"点击事件
+        document.getElementById('logout-btn').onclick = function() {
+            localStorage.removeItem('jwt_token');
+            window.location.href = '/login';
+        };
+    });
+    </script>
+</body>
+</html> 
