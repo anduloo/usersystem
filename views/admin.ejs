@@ -114,6 +114,7 @@
                                 <th>邮箱</th>
                                 <th>姓名</th>
                                 <th>角色</th>
+                                <th>状态</th>
                                 <th>权限状态</th>
                                 <th>创建时间</th>
                                 <th>操作</th>
@@ -462,6 +463,9 @@
               <button type="button" class="btn btn-secondary" id="edit-toggle-admin-btn" style="justify-content: flex-start; text-align: left;">
                 <i class="fa fa-user-secret" style="margin-right: 0.5rem;"></i><span id="edit-admin-text">设为管理员</span>
               </button>
+              <button type="button" class="btn btn-danger" id="edit-delete-user-btn" style="justify-content: flex-start; text-align: left;">
+                <i class="fa fa-trash" style="margin-right: 0.5rem;"></i>删除用户
+              </button>
             </div>
           </div>
           
@@ -564,14 +568,17 @@
                 } catch (e) {
                     projectCount = 0;
                 }
-                
                 const isSuperAdmin = user.isSuperAdmin;
+                const statusHtml = user.isActive
+                  ? '<span style="color: #059669; font-weight: 500;">正常</span>'
+                  : '<span style="color: #dc2626; font-weight: 500;">已禁用</span>';
                 const row = `
                     <tr>
                         <td>${user.id}</td>
                         <td>${user.email}</td>
                         <td>${user.name || ''}</td>
                         <td>${user.role}</td>
+                        <td>${statusHtml}</td>
                         <td><span style="color: ${projectCount > 0 ? '#059669' : '#6b7280'}; font-weight: 500;">${projectCount} 个项目</span></td>
                         <td>${new Date(user.createdAt).toLocaleString()}</td>
                         <td class="actions">
@@ -1618,6 +1625,21 @@
         document.getElementById('logout-btn').onclick = function() {
             localStorage.removeItem('jwt_token');
             window.location.href = '/login';
+        };
+
+        document.getElementById('edit-delete-user-btn').onclick = async function() {
+            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
+            if (!confirm('确定要删除该用户吗？此操作不可恢复！')) return;
+            try {
+                await apiFetch(`/api/users/${currentEditUser.id}`, { method: 'DELETE' });
+                alert('用户已删除！');
+                document.getElementById('user-edit-modal').style.display = 'none';
+                currentEditUser = null;
+                userPagination.currentPage = 1; // 重置到第一页
+                loadInitialData(); // 刷新用户列表
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
         };
     });
     </script>

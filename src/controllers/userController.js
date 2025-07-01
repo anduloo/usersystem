@@ -203,6 +203,23 @@ const updateUser = async (req, res) => {
   }
 };
 
+// 删除用户 (仅管理员)
+const deleteUser = async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    // 不能删除超级管理员
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user.isSuperAdmin) {
+      return res.status(403).json({ message: '不能删除超级管理员' });
+    }
+    await prisma.user.delete({ where: { id: userId } });
+    await logAdminAction(req.user.id, '删除用户', 'User', userId, '');
+    res.status(200).json({ message: '用户已删除' });
+  } catch (error) {
+    res.status(500).json({ message: '服务器内部错误' });
+  }
+};
+
 module.exports = {
   getMe,
   getAllUsers,
@@ -213,4 +230,5 @@ module.exports = {
   setAdmin,
   unsetAdmin,
   updateUser,
+  deleteUser,
 };

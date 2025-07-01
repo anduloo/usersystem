@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getMe, getAllUsers, getUserProjects, resetPassword, activateUser, deactivateUser, setAdmin, unsetAdmin, updateUser } = require('../controllers/userController');
+const { getMe, getAllUsers, getUserProjects, resetPassword, activateUser, deactivateUser, setAdmin, unsetAdmin, updateUser, deleteUser } = require('../controllers/userController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 const prisma = require('../utils/prisma');
@@ -32,6 +32,9 @@ router.patch('/:id/set-admin', authMiddleware, adminMiddleware, setAdmin);
 
 // 取消管理员 (仅管理员)
 router.patch('/:id/unset-admin', authMiddleware, adminMiddleware, unsetAdmin);
+
+// 删除用户 (仅管理员)
+router.delete('/:id', authMiddleware, adminMiddleware, deleteUser);
 
 // 管理员操作日志查询 (仅管理员)
 router.get('/admin-logs', authMiddleware, adminMiddleware, async (req, res) => {

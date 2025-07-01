@@ -3,7 +3,6 @@ const router = express.Router();
 const { register, login, showPortal, getPortalData } = require('../controllers/authController');
 const { 
   renderLoginPage, 
-  renderRegisterPage,
   renderAdminPage
 } = require('../controllers/pagesController');
 const authMiddleware = require('../middlewares/authMiddleware');
@@ -15,9 +14,9 @@ router.post('/api/auth/login', login);
 
 // === 页面渲染 GET 请求 ===
 router.get('/login', renderLoginPage);
-router.get('/register', renderRegisterPage);
+router.get('/register', renderLoginPage); // 合并页面
 router.get('/portal', showPortal);
-router.get('/admin', renderAdminPage);
+router.get('/admin', authMiddleware, adminMiddleware, renderAdminPage);
 
 // === 数据 API GET 请求 ===
 router.get('/api/portal', authMiddleware, getPortalData);

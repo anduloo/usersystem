@@ -1,0 +1,17 @@
+# 连接到数据库
+sudo -u postgres psql -d usersystem
+
+# 查看用户表
+\dt
+
+# 查看用户列表
+SELECT id, username, email, role FROM "User";
+
+# 将用户升级为管理员（替换username为实际用户名）
+UPDATE "User" SET role = 'admin' WHERE username = 'your_username';
+
+# 确认更新
+SELECT id, username, email, role FROM "User";
+
+# 退出
+\q

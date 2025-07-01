@@ -4,13 +4,13 @@ const { logAdminAction } = require('../utils/adminLog');
 // 创建新项目 (仅管理员)
 const createProject = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, url } = req.body;
     if (!name) {
       return res.status(400).json({ message: '项目名称不能为空' });
     }
 
     const newProject = await prisma.project.create({
-      data: { name, description },
+      data: { name, description, url },
     });
 
     res.status(201).json(newProject);

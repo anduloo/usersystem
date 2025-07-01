@@ -1,16 +1,9 @@
 const renderLoginPage = (req, res) => {
-  const { error, redirect_uri } = req.query;
+  const { error, redirect_uri, success } = req.query;
   res.render('login', {
     error: error || null,
     redirect_uri: redirect_uri || '',
-  });
-};
-
-const renderRegisterPage = (req, res) => {
-  const { error, redirect_uri } = req.query;
-  res.render('register', {
-    error: error || null,
-    redirect_uri: redirect_uri || '',
+    success: success === '1' || false
   });
 };
 
@@ -20,6 +13,5 @@ const renderAdminPage = (req, res) => {
 
 module.exports = {
   renderLoginPage,
-  renderRegisterPage,
   renderAdminPage,
 };

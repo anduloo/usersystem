@@ -332,6 +332,16 @@ body::before {
 .login-btn:active {
   transform: translateY(0);
 }
+.form-success {
+    color: #4caf50;
+    background: #e8f5e9;
+    border: 1px solid #4caf50;
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    font-size: 15px;
+  }
 
 /* 注册链接 */
 .register-link {

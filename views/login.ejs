@@ -18,6 +18,9 @@
     <div class="glass-card login-container">
         <div class="login-title">318<span class="login-accent">TECH</span></div>
         <p class="login-subtitle">连接未来，从这里开始</p>
+        <% if (typeof success !== 'undefined' && success) { %>
+            <div class="form-success">注册成功，请登录！</div>
+        <% } %>
         <% if (locals.error) { %>
             <div class="form-error"><%= error %></div>
         <% } %>

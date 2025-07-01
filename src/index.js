@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path'); // 引入 path 模块
 const cors = require('cors');
 require('dotenv').config();
+const cookieParser = require('cookie-parser');
 
 // 引入我们的新路由
 const authRoutes = require('./routes/authRoutes');
@@ -67,6 +68,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 // 用于解析 POST 请求中 application/x-www-form-urlencoded 类型的数据
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // 静态资源托管
 app.use('/css', express.static(path.join(__dirname, '../css')));
@@ -90,3 +92,5 @@ app.listen(PORT, () => {
   console.log(`服务器正在 http://localhost:${PORT} 上运行`);
   console.log('CORS配置已启用，支持远程调用');
 });
+
+console.log('DATABASE_URL:', process.env.DATABASE_URL);

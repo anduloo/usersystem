@@ -23,15 +23,8 @@ const register = async (req, res) => {
       data: { email, password: hashedPassword, name },
     });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-    
-    const destination = new URL(safeRedirectUri);
-    destination.searchParams.set('token', token);
-    res.redirect(destination.toString());
+    // 注册成功后，重定向到登录页并带上 success 参数
+    return res.redirect('/login?success=1');
 
   } catch (error) {
     console.error('注册失败:', error);
@@ -97,16 +90,23 @@ const login = async (req, res) => {
       { expiresIn: '1d' }
     );
     
-    // 决定登录成功后的跳转地址
-    // 如果有 redirect_uri 且不为空，就跳回原应用；否则，跳到门户页面
-    const destinationUrl = (redirect_uri && redirect_uri.trim() !== '') 
-      ? redirect_uri 
-      : 'http://localhost:3001/portal';
-      
-    const destination = new URL(destinationUrl);
-    destination.searchParams.set('token', token);
-
-    res.redirect(destination.toString());
+    // 登录成功后将token写入cookie
+    res.cookie('token', token, { httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+    
+    // 决定登录成功后的跳转地址，并拼接 token
+    let destinationUrl;
+    if (redirect_uri && redirect_uri.trim() !== '') {
+      // 判断 redirect_uri 是否已带参数
+      if (redirect_uri.includes('?')) {
+        destinationUrl = `${redirect_uri}&token=${token}`;
+      } else {
+        destinationUrl = `${redirect_uri}?token=${token}`;
+      }
+    } else {
+      destinationUrl = `/portal?token=${token}`;
+    }
+    
+    res.redirect(destinationUrl);
 
   } catch (error) {
     console.error('登录失败:', error);
@@ -142,18 +142,21 @@ const getPortalData = async (req, res) => {
       (assignment) => assignment.project
     );
 
-    // 默认应用列表
-    const defaultApps = [
-      {
-        id: 'admin',
-        name: '后台管理系统',
-        description: '用户管理、项目管理、数据统计',
-        url: '/admin'
-      }
-    ];
+    // 默认应用列表 - 根据用户角色动态添加
+    const defaultApps = [];
 
-    // 如果是管理员，添加更多默认应用
+    // 只有管理员才能看到后台管理系统
     if (req.user.role === 'admin' || req.user.isSuperAdmin) {
+      defaultApps.push(
+        {
+          id: 'admin',
+          name: '后台管理系统',
+          description: '用户管理、项目管理、数据统计',
+          url: '/admin'
+        }
+      );
+    } else {
+      // 普通用户只显示门户页面
       defaultApps.push(
         {
           id: 'portal',
