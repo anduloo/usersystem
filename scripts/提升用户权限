@@ -15,3 +15,6 @@ SELECT id, username, email, role FROM "User";
 
 # 退出
 \q
+
+
+npx prisma studio

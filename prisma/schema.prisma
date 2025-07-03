@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,41 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 用户模型
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  password     String
-  name         String?
-  role         String   @default("USER") // 'USER' or 'ADMIN'
-  wechatOpenId String?  @unique
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  isActive     Boolean  @default(true)
-  isSuperAdmin Boolean @default(false)
-
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  password           String
+  name               String?
+  role               String              @default("USER")
+  wechatOpenId       String?             @unique
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  isActive           Boolean             @default(true)
+  isSuperAdmin       Boolean             @default(false)
   projectAssignments ProjectAssignment[]
 }
 
-// 项目模型
 model Project {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // e.g., "image-editor", "annual-report-2024.html"
-  description String?
-  url         String?
-
+  id                 Int                 @id @default(autoincrement())
+  name               String              @unique
+  description        String?
+  url                String?
   projectAssignments ProjectAssignment[]
+  userProjectAccessLogs UserProjectAccessLog[]
 }
 
-// 用户与项目的关联表 (多对多关系)
 model ProjectAssignment {
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  project   Project  @relation(fields: [projectId], references: [id])
-  projectId Int
-
+  userId     Int
+  projectId  Int
   assignedAt DateTime @default(now())
   assignedBy String?
+  project    Project  @relation(fields: [projectId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@id([userId, projectId])
 }
@@ -64,7 +56,7 @@ model UserLoginLog {
   userId    Int
   ip        String?
   userAgent String?
-  city      String? 
+  city      String?
   createdAt DateTime @default(now())
 }
 
@@ -75,4 +67,17 @@ model UserProjectAccessLog {
   ip        String?
   userAgent String?
   createdAt DateTime @default(now())
+  city      String?  @db.VarChar
+
+  project   Project  @relation(fields: [projectId], references: [id])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  title      String
+  content    String
+  fromUserId Int?     // 发送人，系统消息可为 null
+  toUserId   Int?     // 接收人，null 表示全体用户
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }

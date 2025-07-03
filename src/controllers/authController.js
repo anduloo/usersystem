@@ -1,7 +1,8 @@
 const prisma = require('../utils/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const register = async (req, res) => {
   const { email, password, name, redirect_uri } = req.body;
@@ -34,13 +35,47 @@ const register = async (req, res) => {
 
 async function getCityByIp(ip) {
   try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?lang=zh-CN`);
-    const data = await res.json();
-    if (data.status === 'success') {
-      return data.city || data.regionName || data.country || '';
+    // 只保留纯IP，防止有端口或多段
+    if (ip && ip.includes(',')) {
+      ip = ip.split(',')[0].trim();
     }
+    if (!ip || ip === '::1' || ip === '127.0.0.1') {
+      console.log('getCityByIp: 本地或无效IP，返回空');
+      return '';
+    }
+
+    // 1. 淘宝接口
+    const tbUrl = `https://ip.taobao.com/outGetIpInfo?ip=${ip}&accessKey=alibaba-inc`;
+    console.log('getCityByIp 淘宝请求:', tbUrl);
+    try {
+      const tbRes = await fetch(tbUrl, { timeout: 1000 });
+      const tbData = await tbRes.json();
+      console.log('getCityByIp 淘宝返回:', tbData);
+      if (tbData.code === 0 && tbData.data) {
+        // 淘宝接口返回的城市字段
+        return tbData.data.city || tbData.data.region || tbData.data.country || '';
+      }
+    } catch (e) {
+      console.warn('淘宝IP接口失败，尝试备用:', e);
+    }
+
+    // 2. 备用 ip-api.com
+    const url = `http://ip-api.com/json/${ip}?lang=zh-CN`;
+    console.log('getCityByIp 备用请求:', url);
+    try {
+      const res = await fetch(url, { timeout: 1000 });
+      const data = await res.json();
+      console.log('getCityByIp 备用返回:', data);
+      if (data.status === 'success') {
+        return data.city || data.regionName || data.country || '';
+      }
+    } catch (e) {
+      console.warn('ip-api.com 备用接口也失败:', e);
+    }
+
     return '';
   } catch (e) {
+    console.error('getCityByIp error:', e);
     return '';
   }
 }
@@ -73,15 +108,16 @@ const login = async (req, res) => {
     }
 
     const ip = req.headers['x-forwarded-for'] || req.ip;
-    const city = await getCityByIp(ip);
-    // 记录登录日志
-    await prisma.userLoginLog.create({
-      data: {
-        userId: user.id,
-        ip,
-        userAgent: req.headers['user-agent'] || '',
-        city
-      }
+    // 异步写入登录日志，不阻塞主流程
+    getCityByIp(ip).then(city => {
+      prisma.userLoginLog.create({
+        data: {
+          userId: user.id,
+          ip,
+          userAgent: req.headers['user-agent'] || '',
+          city
+        }
+      }).catch(() => {});
     });
 
     const token = jwt.sign(
@@ -155,21 +191,18 @@ const getPortalData = async (req, res) => {
           url: '/admin'
         }
       );
-    } else {
-      // 普通用户只显示门户页面
-      defaultApps.push(
-        {
-          id: 'portal',
-          name: '应用门户',
-          description: '统一的应用访问入口',
-          url: '/portal'
-        }
-      );
     }
+    // 普通用户 defaultApps 保持为空
 
     // 返回用户实际分配的项目和默认应用
     res.json({
-      user: req.user,
+      user: {
+        id: userWithProjects.id,
+        email: userWithProjects.email,
+        name: userWithProjects.name,
+        role: userWithProjects.role,
+        isSuperAdmin: userWithProjects.isSuperAdmin
+      },
       projects: projects,
       defaultApps: defaultApps
     });
@@ -184,4 +217,5 @@ module.exports = {
   login,
   showPortal,
   getPortalData,
+  getCityByIp,
 };

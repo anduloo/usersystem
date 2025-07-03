@@ -11,6 +11,11 @@ const adminMiddleware = require('../middlewares/adminMiddleware');
 // === 认证相关 POST 请求 ===
 router.post('/api/auth/register', register);
 router.post('/api/auth/login', login);
+router.post('/api/auth/logout', (req, res) => {
+  // 清除token cookie（如果有）
+  res.clearCookie('token');
+  res.json({ success: true });
+});
 
 // === 页面渲染 GET 请求 ===
 router.get('/login', renderLoginPage);

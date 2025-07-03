@@ -4,8 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>后台管理</title>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
+    <!-- Select2 美化多选下拉 
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>-->
+    
 </head>
 <body>
     <!-- 侧边栏 -->
@@ -16,6 +21,7 @@
             <a href="#dashboard" class="sidebar-menu-item nav-item-active" id="tab-dashboard"><i class="fa fa-dashboard"></i><span>Dashboard</span></a>
             <a href="#users" class="sidebar-menu-item" id="tab-users"><i class="fa fa-users"></i><span>用户管理</span></a>
             <a href="#projects" class="sidebar-menu-item" id="tab-projects"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+            <a href="#messages" class="sidebar-menu-item" id="tab-messages"><i class="fa fa-envelope"></i><span>消息管理</span></a>
             <a href="#operation-logs" class="sidebar-menu-item" id="tab-logs"><i class="fa fa-history"></i><span>操作日志</span></a>
             <a href="#login-logs" class="sidebar-menu-item" id="tab-login-logs"><i class="fa fa-sign-in"></i><span>登录日志</span></a>
             <a href="#access-logs" class="sidebar-menu-item" id="tab-access-logs"><i class="fa fa-eye"></i><span>访问日志</span></a>
@@ -44,6 +50,8 @@
                         </button>
                     </div>
                 </div>
+                <!-- 右上角操作区加发送消息按钮 -->
+                <!-- <button class="btn btn-primary" id="send-message-btn" style="margin-right:12px;">发送消息</button> -->
             </div>
         </header>
         <main class="main-body" id="contentArea">
@@ -90,24 +98,21 @@
             </section>
             <section id="user-management">
                 <div class="card">
-                    <!-- 搜索和分页控制 -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="table-toolbar">
+                        <div class="toolbar-left">
                             <label style="color: var(--muted); font-size: 0.9rem;">搜索用户：</label>
-                            <input type="text" id="user-search" placeholder="输入邮箱或姓名搜索..." style="padding: 0.5rem 1rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8); width: 250px;">
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <input type="text" id="user-search" class="search-input" placeholder="输入邮箱或姓名搜索...">
                             <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
-                            <select id="user-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                            <select id="user-page-size" class="page-size-select">
                                 <option value="10">10条</option>
                                 <option value="20" selected>20条</option>
                                 <option value="50">50条</option>
                                 <option value="100">100条</option>
                             </select>
                         </div>
+                        <div class="toolbar-right toolbar-btns"></div>
                     </div>
-                    
-                    <table id="users-table">
+                    <table id="users-table" class="admin-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -122,36 +127,33 @@
                         </thead>
                         <tbody><!-- 用户数据由JS填充 --></tbody>
                     </table>
-                    
-                    <!-- 分页控件 -->
-                    <div id="user-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
-                        <div style="color: var(--muted); font-size: 0.9rem;">
-                            显示 <span id="user-start">1</span> - <span id="user-end">20</span> 条，共 <span id="user-total">0</span> 条
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="user-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                    <div id="user-pagination" class="admin-pagination">
+                        <div>显示 <span id="user-start">1</span> - <span id="user-end">20</span> 条，共 <span id="user-total">0</span> 条</div>
+                        <div class="pagination-btns">
+                            <button id="user-prev" class="btn btn-secondary">上一页</button>
                             <div id="user-page-numbers" style="display: flex; gap: 0.3rem;"></div>
-                            <button id="user-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                            <button id="user-next" class="btn btn-secondary">下一页</button>
                         </div>
                     </div>
                 </div>
             </section>
             <section id="project-management">
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">项目管理</h3>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="table-toolbar">
+                        <div class="toolbar-left">
                             <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
-                            <select id="project-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                            <select id="project-page-size" class="page-size-select">
                                 <option value="10">10条</option>
                                 <option value="20" selected>20条</option>
                                 <option value="50">50条</option>
                                 <option value="100">100条</option>
                             </select>
+                        </div>
+                        <div class="toolbar-right toolbar-btns">
                             <button class="btn btn-primary" id="add-project-btn">添加项目</button>
-                </div>
+                        </div>
                     </div>
-                    <table id="projects-table">
+                    <table id="projects-table" class="admin-table">
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -163,35 +165,31 @@
                         </thead>
                         <tbody><!-- 项目数据由JS填充 --></tbody>
                     </table>
-                    
-                    <!-- 分页控件 -->
-                    <div id="project-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
-                        <div style="color: var(--muted); font-size: 0.9rem;">
-                            显示 <span id="project-start">1</span> - <span id="project-end">20</span> 条，共 <span id="project-total">0</span> 条
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="project-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                    <div id="project-pagination" class="admin-pagination">
+                        <div>显示 <span id="project-start">1</span> - <span id="project-end">20</span> 条，共 <span id="project-total">0</span> 条</div>
+                        <div class="pagination-btns">
+                            <button id="project-prev" class="btn btn-secondary">上一页</button>
                             <div id="project-page-numbers" style="display: flex; gap: 0.3rem;"></div>
-                            <button id="project-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                            <button id="project-next" class="btn btn-secondary">下一页</button>
                         </div>
                     </div>
                 </div>
             </section>
             <section id="admin-log-section">
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">操作日志</h3>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="table-toolbar">
+                        <div class="toolbar-left">
                             <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
-                            <select id="admin-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                            <select id="admin-log-page-size" class="page-size-select">
                                 <option value="10">10条</option>
                                 <option value="20" selected>20条</option>
                                 <option value="50">50条</option>
                                 <option value="100">100条</option>
                             </select>
                         </div>
+                        <div class="toolbar-right toolbar-btns"></div>
                     </div>
-                    <table id="admin-log-table">
+                    <table id="admin-log-table" class="admin-table">
                         <thead>
                             <tr>
                                 <th>时间</th>
@@ -204,39 +202,33 @@
                         </thead>
                         <tbody><!-- 日志数据由JS填充 --></tbody>
                     </table>
-                    
-                    <!-- 分页控件 -->
-                    <div id="admin-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
-                        <div style="color: var(--muted); font-size: 0.9rem;">
-                            显示 <span id="admin-log-start">1</span> - <span id="admin-log-end">20</span> 条，共 <span id="admin-log-total">0</span> 条
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="admin-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                    <div id="admin-log-pagination" class="admin-pagination">
+                        <div>显示 <span id="admin-log-start">1</span> - <span id="admin-log-end">20</span> 条，共 <span id="admin-log-total">0</span> 条</div>
+                        <div class="pagination-btns">
+                            <button id="admin-log-prev" class="btn btn-secondary">上一页</button>
                             <div id="admin-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
-                            <button id="admin-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                            <button id="admin-log-next" class="btn btn-secondary">下一页</button>
                         </div>
                     </div>
                 </div>
             </section>
             <section id="login-log-section">
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">登录日志</h3>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="table-toolbar">
+                        <div class="toolbar-left">
                             <label style="color: var(--muted); font-size: 0.9rem;">筛选用户：</label>
-                            <select id="login-log-user-select" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
-                                <option value="">全部</option>
-                            </select>
+                            <select id="login-log-user-select" class="page-size-select" style="width:120px;"><option value="">全部</option></select>
                             <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
-                            <select id="login-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                            <select id="login-log-page-size" class="page-size-select">
                                 <option value="10">10条</option>
                                 <option value="20" selected>20条</option>
                                 <option value="50">50条</option>
                                 <option value="100">100条</option>
                             </select>
+                        </div>
+                        <div class="toolbar-right toolbar-btns"></div>
                     </div>
-                </div>
-                    <table id="login-log-table">
+                    <table id="login-log-table" class="admin-table">
                         <thead>
                             <tr>
                                 <th>用户</th>
@@ -247,63 +239,98 @@
                         </thead>
                         <tbody></tbody>
                     </table>
-                    
-                    <!-- 分页控件 -->
-                    <div id="login-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
-                        <div style="color: var(--muted); font-size: 0.9rem;">
-                            显示 <span id="login-log-start">1</span> - <span id="login-log-end">20</span> 条，共 <span id="login-log-total">0</span> 条
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="login-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                    <div id="login-log-pagination" class="admin-pagination">
+                        <div>显示 <span id="login-log-start">1</span> - <span id="login-log-end">20</span> 条，共 <span id="login-log-total">0</span> 条</div>
+                        <div class="pagination-btns">
+                            <button id="login-log-prev" class="btn btn-secondary">上一页</button>
                             <div id="login-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
-                            <button id="login-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                            <button id="login-log-next" class="btn btn-secondary">下一页</button>
                         </div>
                     </div>
                 </div>
             </section>
             <section id="access-log-section">
                 <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                        <h3 style="margin: 0; color: var(--accent); font-weight: 700;">访问日志</h3>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="table-toolbar">
+                        <div class="toolbar-left">
                             <label style="color: var(--muted); font-size: 0.9rem;">筛选用户：</label>
-                            <select id="access-log-user-select" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
-                                <option value="">全部</option>
-                            </select>
+                            <select id="access-log-user-select" class="page-size-select" style="width:120px;"><option value="">全部</option></select>
                             <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
-                            <select id="access-log-page-size" style="padding: 0.5rem; border: 1px solid rgba(102, 126, 234, 0.2); border-radius: var(--radius); background: rgba(255,255,255,0.8);">
+                            <select id="access-log-page-size" class="page-size-select">
                                 <option value="10">10条</option>
                                 <option value="20" selected>20条</option>
                                 <option value="50">50条</option>
                                 <option value="100">100条</option>
                             </select>
+                        </div>
+                        <div class="toolbar-right toolbar-btns"></div>
                     </div>
-                </div>
-                    <table id="access-log-table">
+                    <table id="access-log-table" class="admin-table">
                         <thead>
                             <tr>
                                 <th>用户</th>
                                 <th>访问时间</th>
-                                <th>项目ID</th>
+                                <th>项目名称</th>
                                 <th>IP</th>
                                 <th>城市</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
                     </table>
-                    
-                    <!-- 分页控件 -->
-                    <div id="access-log-pagination" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(102, 126, 234, 0.1);">
-                        <div style="color: var(--muted); font-size: 0.9rem;">
-                            显示 <span id="access-log-start">1</span> - <span id="access-log-end">20</span> 条，共 <span id="access-log-total">0</span> 条
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button id="access-log-prev" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">上一页</button>
+                    <div id="access-log-pagination" class="admin-pagination">
+                        <div>显示 <span id="access-log-start">1</span> - <span id="access-log-end">20</span> 条，共 <span id="access-log-total">0</span> 条</div>
+                        <div class="pagination-btns">
+                            <button id="access-log-prev" class="btn btn-secondary">上一页</button>
                             <div id="access-log-page-numbers" style="display: flex; gap: 0.3rem;"></div>
-                            <button id="access-log-next" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">下一页</button>
+                            <button id="access-log-next" class="btn btn-secondary">下一页</button>
                         </div>
                     </div>
                 </div>
+            </section>
+            <section id="message-center-section" style="display:none;">
+              <div class="card">
+                <div class="table-toolbar">
+                  <div class="toolbar-left">
+                    <label style="color: var(--muted); font-size: 0.9rem;">搜索消息：</label>
+                    <input type="text" id="message-search" class="search-input" placeholder="输入用户/标题/内容搜索...">
+                    <label style="color: var(--muted); font-size: 0.9rem;">每页显示：</label>
+                    <select id="message-page-size" class="page-size-select">
+                      <option value="10">10条</option>
+                      <option value="20" selected>20条</option>
+                      <option value="50">50条</option>
+                      <option value="100">100条</option>
+                    </select>
+                  </div>
+                  <div class="toolbar-right toolbar-btns">
+                    <button class="btn btn-primary" id="send-message-btn2">发送消息</button>
+                    <button class="btn btn-danger" id="batch-delete-msg" disabled>批量删除</button>
+                    <button class="btn btn-secondary" id="batch-read-msg" disabled>批量已读</button>
+                  </div>
+                </div>
+                <table id="message-table" class="admin-table">
+                  <thead>
+                    <tr>
+                      <th><input type="checkbox" id="message-check-all" /></th>
+                      <th>序号</th>
+                      <th>用户</th>
+                      <th>标题</th>
+                      <th>内容</th>
+                      <th>时间</th>
+                      <th>状态</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+                <div id="message-pagination" class="admin-pagination">
+                  <div>显示 <span id="message-start">1</span> - <span id="message-end">20</span> 条，共 <span id="message-total">0</span> 条</div>
+                  <div class="pagination-btns">
+                    <button id="message-prev" class="btn btn-secondary">上一页</button>
+                    <div id="message-page-numbers" style="display: flex; gap: 0.3rem;"></div>
+                    <button id="message-next" class="btn btn-secondary">下一页</button>
+                  </div>
+                </div>
+              </div>
             </section>
         </main>
     </div>
@@ -315,15 +342,15 @@
                 <input type="hidden" id="project-id">
                 <div class="form-group">
                     <label for="project-name"><i class="fa fa-folder"></i></label>
-                    <input type="text" id="project-name" required placeholder="项目名称">
+                    <input type="text" id="project-name" class="styled-input" placeholder="项目名称">
                 </div>
                 <div class="form-group">
                     <label for="project-description"><i class="fa fa-info-circle"></i></label>
-                    <input type="text" id="project-description" placeholder="项目描述">
+                    <textarea id="project-description" class="styled-input" placeholder="项目描述"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="project-url"><i class="fa fa-link"></i></label>
-                    <input type="text" id="project-url" placeholder="项目地址">
+                    <input type="text" id="project-url" class="styled-input" placeholder="项目地址">
                 </div>
                 <div class="actions">
                     <button type="submit" class="btn btn-primary">保存</button>
@@ -378,17 +405,18 @@
          <div class="modal-content">
         <div class="modal-title">修改密码</div>
         <form id="change-password-form">
+          <input type="text" name="username" autocomplete="username" style="display:none;">
           <div class="form-group">
             <label for="old-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="old-password" placeholder="当前密码" required>
+            <input type="password" id="old-password" placeholder="当前密码" required autocomplete="current-password">
             </div>
           <div class="form-group">
             <label for="new-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="new-password" placeholder="新密码" required>
+            <input type="password" id="new-password" placeholder="新密码" required autocomplete="new-password">
           </div>
           <div class="form-group">
             <label for="confirm-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="confirm-password" placeholder="确认新密码" required>
+            <input type="password" id="confirm-password" placeholder="确认新密码" required autocomplete="new-password">
           </div>
           <div id="change-password-error" class="form-error" style="display:none;"></div>
           <div class="actions">
@@ -412,14 +440,15 @@
         </div>
         
         <form id="reset-password-form">
+          <input type="text" name="username" autocomplete="username" style="display:none;">
           <input type="hidden" id="reset-user-id">
           <div class="form-group">
             <label for="reset-new-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="reset-new-password" placeholder="新密码（至少6位）" required>
+            <input type="password" id="reset-new-password" placeholder="新密码（至少6位）" required autocomplete="new-password">
           </div>
           <div class="form-group">
             <label for="reset-confirm-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="reset-confirm-password" placeholder="确认新密码" required>
+            <input type="password" id="reset-confirm-password" placeholder="确认新密码" required autocomplete="new-password">
           </div>
           <div id="reset-password-error" class="form-error" style="display:none;"></div>
           <div class="actions">
@@ -442,12 +471,12 @@
           <!-- 基本信息 -->
           <div class="form-group">
             <label for="edit-user-email"><i class="fa fa-envelope"></i></label>
-            <input type="email" id="edit-user-email" placeholder="邮箱地址" readonly>
+            <input type="email" id="edit-user-email" placeholder="邮箱地址" readonly autocomplete="email">
           </div>
           
           <div class="form-group">
             <label for="edit-user-name"><i class="fa fa-user"></i></label>
-            <input type="text" id="edit-user-name" placeholder="用户姓名">
+            <input type="text" id="edit-user-name" placeholder="用户姓名" autocomplete="name">
           </div>
           
           <!-- 功能按钮组 -->
@@ -476,6 +505,70 @@
           </div>
         </form>
         </div>
+    </div>
+
+    <!-- 发送消息弹窗 -->
+    <div class="modal" id="send-message-modal">
+      <div class="modal-content" style="max-width:420px;">
+        <div class="modal-title">发送消息</div>
+        <form id="send-message-form">
+          <div class="form-group">
+            <label>接收人</label>
+            <div id="message-to-user-multiselect" class="multi-select-container styled-input" tabindex="0"></div>
+            <input type="hidden" name="toUserIds" id="message-to-user-hidden" />
+          </div>
+          <div class="form-group">
+            <label>标题</label>
+            <input type="text" name="title" required maxlength="50" placeholder="请输入消息标题" autocomplete="off" class="styled-input" />
+          </div>
+          <div class="form-group">
+            <label>内容</label>
+            <textarea name="content" required maxlength="200" placeholder="请输入消息内容" autocomplete="off" rows="4" class="styled-input"></textarea>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">发送</button>
+            <button type="button" class="btn btn-secondary" id="cancel-send-message">取消</button>
+          </div>
+          <div id="send-message-tip" style="color:#48bb78;margin-top:8px;display:none;"></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 消息详情弹窗 -->
+    <div class="modal" id="message-detail-modal">
+      <div class="modal-content" style="max-width:420px;">
+        <div class="modal-title">消息详情</div>
+        <div id="message-detail-content" style="margin:1.2em 0;"></div>
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="close-message-detail">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 在合适位置（如消息管理区块后）插入回复消息弹窗 -->
+    <div id="reply-modal" class="modal" style="display:none;z-index:3000;">
+      <div class="modal-content" style="max-width:400px;">
+        <div class="modal-title">回复消息</div>
+        <form id="reply-form">
+          <div class="form-group">
+            <label>收件人</label>
+            <input type="text" id="reply-to-user" class="styled-input" disabled>
+          </div>
+          <div class="form-group">
+            <label>标题</label>
+            <input type="text" id="reply-title" class="styled-input" required maxlength="50">
+          </div>
+          <div class="form-group">
+            <label>内容</label>
+            <textarea id="reply-content" class="styled-input" required maxlength="200" rows="4"></textarea>
+          </div>
+          <div class="actions">
+            <button type="submit" class="btn btn-primary">发送</button>
+            <button type="button" class="btn btn-secondary" id="reply-cancel">取消</button>
+          </div>
+          <div id="reply-tip" style="color:#48bb78;margin-top:8px;display:none;"></div>
+        </form>
+      </div>
     </div>
 
     <script>
@@ -1270,8 +1363,7 @@
             
             accessLogTableBody.innerHTML = paginatedLogs.map(log => {
                     const user = allUsersForLogs.find(u => u.id === log.userId);
-                    const project = allProjectsForLogs.find(p => p.id === log.projectId);
-                    return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${project ? project.name : log.projectId}</td><td>${log.ip || ''}</td><td>${log.city || ''}</td></tr>`;
+                    return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${log.projectName || log.projectId}</td><td>${log.ip || ''}</td><td>${log.city || ''}</td></tr>`;
                 }).join('');
             
             // 更新分页控件
@@ -1437,10 +1529,10 @@
             adminLogTableBody.innerHTML = paginatedLogs.map(log => `
                 <tr>
                     <td>${new Date(log.createdAt).toLocaleString()}</td>
-                    <td>${log.adminId}</td>
+                    <td>${log.adminName || log.adminId}</td>
                     <td>${log.action}</td>
-                    <td>${log.objectType}</td>
-                    <td>${log.objectId}</td>
+                    <td>${log.objectType || ''}</td>
+                    <td>${log.objectName || log.objectId || ''}</td>
                     <td>${log.details || ''}</td>
                 </tr>
             `).join('');
@@ -1640,6 +1732,569 @@
             } catch (e) {
                 alert('删除失败: ' + e.message);
             }
+        };
+
+        // 发送消息弹窗逻辑
+        const sendMsgModal = document.getElementById('send-message-modal');
+        const sendMsgForm = document.getElementById('send-message-form');
+        const sendMsgCancel = document.getElementById('cancel-send-message');
+        const sendMsgTip = document.getElementById('send-message-tip');
+        const toUserSelect = document.getElementById('message-to-user');
+
+        sendMsgCancel.onclick = function() {
+          sendMsgModal.style.display = 'none';
+          sendMsgForm.reset();
+          sendMsgTip.style.display = 'none';
+        };
+        sendMsgForm.onsubmit = async function(e) {
+          e.preventDefault();
+          const form = new FormData(sendMsgForm);
+          let toUserIds = $('#message-to-user').val(); // 数组
+          if (toUserIds && toUserIds.includes('')) {
+            toUserIds = ['']; // 只选了全体用户
+          }
+          const data = {
+            title: form.get('title'),
+            content: form.get('content'),
+            toUserIds
+          };
+          const res = await apiFetch('/api/users/messages', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (res.success) {
+            sendMsgTip.textContent = '发送成功！';
+            sendMsgTip.style.display = 'block';
+            setTimeout(() => {
+              sendMsgModal.style.display = 'none';
+              sendMsgForm.reset();
+              sendMsgTip.style.display = 'none';
+              // 清空select2
+              $('#message-to-user').val(null).trigger('change');
+            }, 1200);
+          } else {
+            sendMsgTip.textContent = res.message || '发送失败';
+            sendMsgTip.style.display = 'block';
+          }
+        };
+
+        // 消息中心Tab相关逻辑
+        const tabMessages = document.getElementById('tab-messages');
+        const messageSection = document.getElementById('message-center-section');
+        const messagePagination = { currentPage: 1, pageSize: 20, total: 0, messages: [] };
+        const messagePrev = document.getElementById('message-prev');
+        const messageNext = document.getElementById('message-next');
+        const messagePageNumbers = document.getElementById('message-page-numbers');
+        const messageStart = document.getElementById('message-start');
+        const messageEnd = document.getElementById('message-end');
+        const messageTotal = document.getElementById('message-total');
+        const messageDetailModal = document.getElementById('message-detail-modal');
+        const messageDetailContent = document.getElementById('message-detail-content');
+        const closeMessageDetail = document.getElementById('close-message-detail');
+
+        // Tab切换逻辑扩展
+        const tabMapExt = [
+          {tab: tabDashboard, section: dashboardSection, title: 'Dashboard', async: false},
+          {tab: tabUsers, section: userSection, title: '用户管理', async: false},
+          {tab: tabProjects, section: projectSection, title: '项目管理', async: false},
+          {tab: tabMessages, section: messageSection, title: '消息管理', async: true},
+          {tab: tabLogs, section: adminLogSection, title: '操作日志', async: false},
+          {tab: tabLoginLogs, section: loginLogSection, title: '登录日志', async: true},
+          {tab: tabAccessLogs, section: accessLogSection, title: '访问日志', async: true}
+        ];
+        function switchTabExt(idx) {
+          tabMapExt.forEach((item, i) => {
+            if (item.tab) item.tab.classList.remove('nav-item-active');
+            if (item.section) item.section.style.display = 'none';
+          });
+          if (tabMapExt[idx].tab) tabMapExt[idx].tab.classList.add('nav-item-active');
+          if (tabMapExt[idx].section) tabMapExt[idx].section.style.display = 'block';
+          document.getElementById('pageTitle').innerText = tabMapExt[idx].title;
+          if (tabMapExt[idx].async && idx === 3) {
+            loadMessages();
+          } else if (tabMapExt[idx].async && idx === 5) {
+            loadUsersForLogs().then(renderLoginLogs);
+          } else if (tabMapExt[idx].async && idx === 6) {
+            loadUsersForLogs().then(renderAccessLogs);
+          } else if (idx === 4) {
+            renderAdminLogs();
+          }
+        }
+        tabMapExt.forEach((item, idx) => {
+          if (item.tab) {
+            item.tab.onclick = (e) => {
+              e.preventDefault();
+              if (idx === 0) loadDashboardStats();
+              switchTabExt(idx);
+            };
+          }
+        });
+        switchTabExt(0);
+
+        // 消息中心功能
+        async function loadMessages() {
+          const res = await apiFetch('/api/users/messages');
+          messagePagination.messages = res;
+          renderMessages();
+        }
+        function renderMessages() {
+          const startIndex = (messagePagination.currentPage - 1) * messagePagination.pageSize;
+          const endIndex = startIndex + messagePagination.pageSize;
+          // 搜索过滤
+          let filtered = messagePagination.messages;
+          if (messageSearchTerm) {
+            const term = messageSearchTerm.toLowerCase();
+            filtered = filtered.filter(msg => {
+              const user = allUsers.find(u => u.id === msg.fromUserId) || {};
+              return (user.name && user.name.toLowerCase().includes(term)) ||
+                     (user.email && user.email.toLowerCase().includes(term)) ||
+                     (msg.title && msg.title.toLowerCase().includes(term)) ||
+                     (msg.content && msg.content.toLowerCase().includes(term));
+            });
+          }
+          const paginated = filtered.slice(startIndex, endIndex);
+          messagePagination.total = filtered.length;
+          messageStart.textContent = startIndex + 1;
+          messageEnd.textContent = Math.min(endIndex, messagePagination.total);
+          messageTotal.textContent = messagePagination.total;
+          messageTableBody.innerHTML = paginated.map((msg, idx) => {
+            const user = allUsers.find(u => u.id === msg.fromUserId);
+            const checked = selectedMsgIds.includes(msg.id) ? 'checked' : '';
+            return `<tr>
+              <td><input type="checkbox" class="message-check" data-id="${msg.id}" ${checked}></td>
+              <td>${startIndex + idx + 1}</td>
+              <td>${user ? (user.name || user.email) : (msg.fromUserId ? msg.fromUserId : '系统')}</td>
+              <td>${msg.title}</td>
+              <td>${msg.content}</td>
+              <td>${new Date(msg.createdAt).toLocaleString()}</td>
+              <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
+              <td>
+                <button class="btn btn-secondary" onclick="showMessageDetail(${msg.id})">详情</button>
+                ${!msg.isRead ? `<button class="btn btn-primary" onclick="markMessageRead(${msg.id})">已读</button>` : ''}
+                <button class="btn btn-danger" onclick="deleteMessage(${msg.id})">删除</button>
+                <button class="btn btn-secondary" onclick="replyMessage(${msg.id})">回复</button>
+              </td>
+            </tr>`;
+          }).join('');
+          updateMessagePagination();
+          // 复选框事件
+          document.querySelectorAll('.message-check').forEach(cb => {
+            cb.onchange = function() {
+              const id = Number(this.getAttribute('data-id'));
+              if (this.checked) {
+                if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id);
+              } else {
+                selectedMsgIds = selectedMsgIds.filter(i => i !== id);
+              }
+              updateBatchBtns();
+              updateCheckAllBox();
+            };
+          });
+          updateCheckAllBox();
+        }
+        function updateMessagePagination() {
+          const totalPages = Math.ceil(messagePagination.total / messagePagination.pageSize);
+          messagePrev.disabled = messagePagination.currentPage <= 1;
+          messageNext.disabled = messagePagination.currentPage >= totalPages;
+          messagePageNumbers.innerHTML = '';
+          const maxVisiblePages = 5;
+          let startPage = Math.max(1, messagePagination.currentPage - Math.floor(maxVisiblePages / 2));
+          let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+          if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+          }
+          for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `btn ${i === messagePagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
+            pageBtn.style.padding = '0.5rem 0.8rem';
+            pageBtn.style.fontSize = '0.9rem';
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => {
+              messagePagination.currentPage = i;
+              renderMessages();
+            };
+            messagePageNumbers.appendChild(pageBtn);
+          }
+        }
+        messagePrev.onclick = () => {
+          if (messagePagination.currentPage > 1) {
+            messagePagination.currentPage--;
+            renderMessages();
+          }
+        };
+        messageNext.onclick = () => {
+          const totalPages = Math.ceil(messagePagination.total / messagePagination.pageSize);
+          if (messagePagination.currentPage < totalPages) {
+            messagePagination.currentPage++;
+            renderMessages();
+          }
+        };
+        window.showMessageDetail = function(id) {
+          const msg = messagePagination.messages.find(m => m.id === id);
+          if (!msg) return;
+          // 获取发送人
+          let sender = msg.fromUserId;
+          if (msg.fromUserId && allUsers) {
+            const u = allUsers.find(u => u.id === msg.fromUserId);
+            if (u) sender = u.name || u.email;
+          }
+          messageDetailContent.innerHTML = `<div style='margin-bottom:0.5em;'><b>发送人：</b>${sender || '系统'}</div><div style='margin-bottom:0.5em;'><b>标题：</b>${msg.title}</div><div style='margin-bottom:1em;white-space:pre-line;'><b>内容：</b>${msg.content}</div><div style='color:#888;font-size:0.95em;'>${new Date(msg.createdAt).toLocaleString()}</div>`;
+          messageDetailModal.style.display = 'flex';
+        };
+        closeMessageDetail.onclick = function() {
+          messageDetailModal.style.display = 'none';
+        };
+        // 支持点击弹窗外部关闭
+        messageDetailModal.onclick = function(e) {
+          if (e.target === messageDetailModal) messageDetailModal.style.display = 'none';
+        };
+        window.markMessageRead = async function(id) {
+          await apiFetch(`/api/users/messages/${id}/read`, { method: 'POST' });
+          await loadMessages();
+        };
+       
+
+        // 原生多选下拉组件实现
+        const multiSelectContainer = document.getElementById('message-to-user-multiselect');
+        const multiSelectHidden = document.getElementById('message-to-user-hidden');
+        let allUserOptions = [];
+        let selectedUserIds = [];
+        let multiSelectInput, multiSelectDropdown;
+        // 初始化多选组件
+        function renderMultiSelect(selected = [], filter = '') {
+          multiSelectContainer.innerHTML = '';
+          // 标签
+          selected.forEach(id => {
+            const user = allUserOptions.find(u => u.id === id);
+            if (!user) return;
+            const tag = document.createElement('span');
+            tag.className = 'multi-select-tag';
+            tag.textContent = user.name || user.email || '全体用户';
+            // 删除按钮
+            const remove = document.createElement('span');
+            remove.className = 'multi-select-tag-remove';
+            remove.innerHTML = '&times;';
+            remove.onclick = (e) => {
+              e.stopPropagation();
+              removeUserFromMultiSelect(id);
+            };
+            tag.appendChild(remove);
+            multiSelectContainer.appendChild(tag);
+          });
+          // 输入框
+          multiSelectInput = document.createElement('input');
+          multiSelectInput.type = 'text';
+          multiSelectInput.className = 'multi-select-input';
+          multiSelectInput.placeholder = selected.length === 0 ? '选择接收人（可多选）' : '';
+          multiSelectInput.autocomplete = 'off';
+          multiSelectInput.oninput = () => {
+            renderDropdown(multiSelectInput.value.trim());
+          };
+          multiSelectInput.onfocus = () => {
+            renderDropdown(multiSelectInput.value.trim());
+          };
+          multiSelectInput.onclick = (e) => {
+            renderDropdown(multiSelectInput.value.trim());
+            e.stopPropagation();
+          };
+          multiSelectContainer.appendChild(multiSelectInput);
+          // 下拉
+          renderDropdown(filter);
+        }
+        function renderDropdown(filter = '') {
+          if (multiSelectDropdown) multiSelectDropdown.remove();
+          multiSelectDropdown = document.createElement('div');
+          multiSelectDropdown.className = 'multi-select-dropdown';
+          // 过滤
+          let options = allUserOptions;
+          if (filter) {
+            const f = filter.toLowerCase();
+            options = options.filter(u => (u.name && u.name.toLowerCase().includes(f)) || (u.email && u.email.toLowerCase().includes(f)) || (u.id === '' && '全体用户'.includes(f)));
+          }
+          // "全体用户"互斥逻辑
+          if (selectedUserIds.includes('')) {
+            options = options.filter(u => u.id === '');
+          }
+          // 渲染选项
+          options.forEach(u => {
+            const opt = document.createElement('div');
+            opt.className = 'multi-select-option';
+            opt.textContent = u.id === '' ? '全体用户' : (u.name || u.email);
+            if (selectedUserIds.includes(u.id)) opt.classList.add('selected');
+            opt.onclick = (e) => {
+              e.stopPropagation();
+              if (u.id === '') {
+                // 选中全体用户，清空其它
+                selectedUserIds = [''];
+              } else {
+                // 选中其它，去掉全体用户
+                selectedUserIds = selectedUserIds.filter(i => i !== '');
+                if (!selectedUserIds.includes(u.id)) selectedUserIds.push(u.id);
+              }
+              updateMultiSelect();
+              renderDropdown('');
+            };
+            multiSelectDropdown.appendChild(opt);
+          });
+          if (options.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'multi-select-option';
+            empty.style.color = '#a0aec0';
+            empty.textContent = '无匹配用户';
+            multiSelectDropdown.appendChild(empty);
+          }
+          multiSelectDropdown.classList.add('open');
+          multiSelectContainer.appendChild(multiSelectDropdown);
+        }
+        function removeUserFromMultiSelect(id) {
+          selectedUserIds = selectedUserIds.filter(i => i !== id);
+          updateMultiSelect();
+          renderDropdown('');
+        }
+        function updateMultiSelect() {
+          renderMultiSelect(selectedUserIds);
+          multiSelectHidden.value = JSON.stringify(selectedUserIds);
+        }
+        // 点击外部关闭下拉
+        document.body.addEventListener('click', function() {
+          if (multiSelectDropdown) multiSelectDropdown.style.display = 'none';
+        });
+        multiSelectContainer.onclick = function(e) {
+          if (multiSelectDropdown) multiSelectDropdown.style.display = 'block';
+          multiSelectInput.focus();
+          e.stopPropagation();
+        };
+        // 打开弹窗时加载用户
+        const sendMsgBtn2 = document.getElementById('send-message-btn2');
+        sendMsgBtn2.onclick = async function() {
+          // 加载用户
+          allUserOptions = [{id: '', name: '全体用户'}];
+          const users = await apiFetch('/api/users');
+          users.forEach(u => {
+            allUserOptions.push({id: String(u.id), name: u.name || u.email, email: u.email});
+          });
+          selectedUserIds = [];
+          updateMultiSelect();
+          sendMsgModal.style.display = 'flex';
+          setTimeout(() => { multiSelectInput && multiSelectInput.focus(); }, 100);
+        };
+        // 表单提交时收集所有选中用户ID为数组
+        sendMsgForm.onsubmit = async function(e) {
+          e.preventDefault();
+          const form = new FormData(sendMsgForm);
+          let toUserIds = [];
+          try {
+            toUserIds = JSON.parse(multiSelectHidden.value);
+          } catch { toUserIds = []; }
+          if (toUserIds && toUserIds.includes('')) {
+            toUserIds = ['']; // 只选了全体用户
+          }
+          const data = {
+            title: form.get('title'),
+            content: form.get('content'),
+            toUserIds
+          };
+          const res = await apiFetch('/api/users/messages', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (res.success) {
+            sendMsgTip.textContent = '发送成功！';
+            sendMsgTip.style.display = 'block';
+            setTimeout(() => {
+              sendMsgModal.style.display = 'none';
+              sendMsgForm.reset();
+              sendMsgTip.style.display = 'none';
+              selectedUserIds = [];
+              updateMultiSelect();
+            }, 1200);
+          } else {
+            sendMsgTip.textContent = res.message || '发送失败';
+            sendMsgTip.style.display = 'block';
+          }
+        };
+
+        // JS部分，替换消息中心相关逻辑
+        const messageTableBody = document.querySelector('#message-table tbody');
+        const messageCheckAll = document.getElementById('message-check-all');
+        const batchDeleteMsg = document.getElementById('batch-delete-msg');
+        const batchReadMsg = document.getElementById('batch-read-msg');
+        const messageSearch = document.getElementById('message-search');
+        let selectedMsgIds = [];
+        let messageSearchTerm = '';
+
+        // 渲染消息表格
+        function renderMessages() {
+          const startIndex = (messagePagination.currentPage - 1) * messagePagination.pageSize;
+          const endIndex = startIndex + messagePagination.pageSize;
+          // 搜索过滤
+          let filtered = messagePagination.messages;
+          if (messageSearchTerm) {
+            const term = messageSearchTerm.toLowerCase();
+            filtered = filtered.filter(msg => {
+              const user = allUsers.find(u => u.id === msg.fromUserId) || {};
+              return (user.name && user.name.toLowerCase().includes(term)) ||
+                     (user.email && user.email.toLowerCase().includes(term)) ||
+                     (msg.title && msg.title.toLowerCase().includes(term)) ||
+                     (msg.content && msg.content.toLowerCase().includes(term));
+            });
+          }
+          const paginated = filtered.slice(startIndex, endIndex);
+          messagePagination.total = filtered.length;
+          messageStart.textContent = startIndex + 1;
+          messageEnd.textContent = Math.min(endIndex, messagePagination.total);
+          messageTotal.textContent = messagePagination.total;
+          messageTableBody.innerHTML = paginated.map((msg, idx) => {
+            const user = allUsers.find(u => u.id === msg.fromUserId);
+            const checked = selectedMsgIds.includes(msg.id) ? 'checked' : '';
+            return `<tr>
+              <td><input type="checkbox" class="message-check" data-id="${msg.id}" ${checked}></td>
+              <td>${startIndex + idx + 1}</td>
+              <td>${user ? (user.name || user.email) : (msg.fromUserId ? msg.fromUserId : '系统')}</td>
+              <td>${msg.title}</td>
+              <td>${msg.content}</td>
+              <td>${new Date(msg.createdAt).toLocaleString()}</td>
+              <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
+              <td>
+                <button class="btn btn-secondary" onclick="showMessageDetail(${msg.id})">详情</button>
+                ${!msg.isRead ? `<button class="btn btn-primary" onclick="markMessageRead(${msg.id})">已读</button>` : ''}
+                <button class="btn btn-danger" onclick="deleteMessage(${msg.id})">删除</button>
+                <button class="btn btn-secondary" onclick="replyMessage(${msg.id})">回复</button>
+              </td>
+            </tr>`;
+          }).join('');
+          updateMessagePagination();
+          // 复选框事件
+          document.querySelectorAll('.message-check').forEach(cb => {
+            cb.onchange = function() {
+              const id = Number(this.getAttribute('data-id'));
+              if (this.checked) {
+                if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id);
+              } else {
+                selectedMsgIds = selectedMsgIds.filter(i => i !== id);
+              }
+              updateBatchBtns();
+              updateCheckAllBox();
+            };
+          });
+          updateCheckAllBox();
+        }
+        function updateCheckAllBox() {
+          const pageIds = Array.from(document.querySelectorAll('.message-check')).map(cb => Number(cb.getAttribute('data-id')));
+          messageCheckAll.checked = pageIds.length > 0 && pageIds.every(id => selectedMsgIds.includes(id));
+          messageCheckAll.indeterminate = pageIds.some(id => selectedMsgIds.includes(id)) && !messageCheckAll.checked;
+        }
+        messageCheckAll.onchange = function() {
+          const pageIds = Array.from(document.querySelectorAll('.message-check')).map(cb => Number(cb.getAttribute('data-id')));
+          if (this.checked) {
+            pageIds.forEach(id => { if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id); });
+          } else {
+            selectedMsgIds = selectedMsgIds.filter(id => !pageIds.includes(id));
+          }
+          renderMessages();
+          updateBatchBtns();
+        };
+        function updateBatchBtns() {
+          batchDeleteMsg.disabled = selectedMsgIds.length === 0;
+          batchReadMsg.disabled = selectedMsgIds.length === 0;
+        }
+        batchDeleteMsg.onclick = async function() {
+          if (!selectedMsgIds.length) return;
+          if (!confirm('确定要批量删除选中的消息吗？')) return;
+          for (const id of selectedMsgIds) {
+            await deleteMessage(id, true);
+          }
+          selectedMsgIds = [];
+          await loadMessages();
+          updateBatchBtns();
+        };
+        batchReadMsg.onclick = async function() {
+          if (!selectedMsgIds.length) return;
+          for (const id of selectedMsgIds) {
+            await markMessageRead(id, true);
+          }
+          selectedMsgIds = [];
+          await loadMessages();
+          updateBatchBtns();
+        };
+        window.deleteMessage = async function(id, silent) {
+          if (!silent && !confirm('确定要删除这条消息吗？')) return;
+          await apiFetch(`/api/users/messages/${id}`, { method: 'DELETE' });
+          await loadMessages();
+        };
+        window.replyMessage = function(id) {
+          const msg = messagePagination.messages.find(m => m.id === id);
+          if (!msg) return;
+          // 获取原发送人
+          let sender = msg.fromUserId;
+          let senderName = sender;
+          if (msg.fromUserId && allUsers) {
+            const u = allUsers.find(u => u.id === msg.fromUserId);
+            if (u) senderName = u.name || u.email;
+          }
+          document.getElementById('reply-modal').style.display = 'flex';
+          document.getElementById('reply-to-user').value = senderName || sender || '系统';
+          document.getElementById('reply-title').value = '回复：' + msg.title;
+          document.getElementById('reply-content').value = '';
+          document.getElementById('reply-tip').style.display = 'none';
+          window.currentReplyToUserId = msg.fromUserId;
+        };
+        // 关闭弹窗
+        const replyCancel = document.getElementById('reply-cancel');
+        if (replyCancel) replyCancel.onclick = function() {
+          document.getElementById('reply-modal').style.display = 'none';
+        };
+        // 回复表单提交
+        const replyForm = document.getElementById('reply-form');
+        if (replyForm) replyForm.onsubmit = async function(e) {
+          e.preventDefault();
+          const title = document.getElementById('reply-title').value.trim();
+          const content = document.getElementById('reply-content').value.trim();
+          const toUserIds = [window.currentReplyToUserId];
+          const tip = document.getElementById('reply-tip');
+          try {
+            const res = await apiFetch('/api/users/messages', {
+              method: 'POST',
+              body: JSON.stringify({ title, content, toUserIds }),
+              headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.success) {
+              tip.textContent = '发送成功！';
+              tip.style.display = 'block';
+              setTimeout(() => {
+                document.getElementById('reply-modal').style.display = 'none';
+                replyForm.reset();
+                tip.style.display = 'none';
+                loadMessages();
+              }, 1200);
+            } else {
+              tip.textContent = res.message || '发送失败';
+              tip.style.display = 'block';
+            }
+          } catch {
+            tip.textContent = '发送失败';
+            tip.style.display = 'block';
+          }
+        };
+        messageSearch.oninput = function() {
+          messageSearchTerm = this.value.trim();
+          messagePagination.currentPage = 1;
+          renderMessages();
+        };
+
+        // JS部分，分页和搜索逻辑
+        const messagePageSize = document.getElementById('message-page-size');
+        messagePageSize.onchange = function(e) {
+          messagePagination.pageSize = parseInt(e.target.value);
+          messagePagination.currentPage = 1;
+          renderMessages();
+        };
+        messageSearch.oninput = function() {
+          messageSearchTerm = this.value.trim();
+          messagePagination.currentPage = 1;
+          renderMessages();
         };
     });
     </script>

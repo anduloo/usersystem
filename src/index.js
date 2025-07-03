@@ -71,9 +71,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // 静态资源托管
+const rootDir = path.resolve(__dirname, '../..');
+app.use(express.static(rootDir)); // 允许直接访问根目录下的 html 文件
+app.use('/titie', express.static(path.join(rootDir, 'titie')));
+app.use('/namecard', express.static(path.join(rootDir, 'namecard')));
+app.use('/image', express.static(path.join(rootDir, 'image')));
 app.use('/css', express.static(path.join(__dirname, '../css')));
 app.use(express.static(path.join(__dirname, '../public')));
-
 app.get('/', (req, res) => {
   res.send('用户管理系统后端服务已启动！');
 });
