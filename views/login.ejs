@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录</title>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/pages/login-page.css">
+    <link rel="stylesheet" href="/css/components/form.css">
+    <link rel="stylesheet" href="/css/components/modal.css">
 </head>
 <body class="login-bg">
     <!-- 背景装饰元素 -->
@@ -38,9 +41,9 @@
             </div>
             <div class="form-row form-remember">
                 <label><input id="remember" type="checkbox"> 记住我</label>
-                <a href="#" class="forgot-link">忘记密码?</a>
+                <a href="#" class="forgot-link" id="showForgotPasswordModalBtn">忘记密码?</a>
             </div>
-            <button type="submit" class="login-btn">登录账户</button>
+            <button type="submit" class="login-btn">登录</button>
             <div class="register-link">
                 还没有账户? <a href="#" id="showRegisterModalBtn">立即注册</a>
             </div>
@@ -71,54 +74,29 @@
             <button class="modal-cancel" type="button" onclick="closeRegisterModal()">取消</button>
         </div>
     </div>
-    <script>
-        // 密码显示/隐藏切换
-        const passwordInput = document.getElementById('login-password');
-        const togglePassword = document.getElementById('togglePassword');
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            const icon = this.querySelector('i');
-            if (type === 'text') {
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            } else {
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            }
-        });
-        // 注册弹窗逻辑
-        const showRegisterModalBtn = document.getElementById('showRegisterModalBtn');
-        const registerModal = document.getElementById('registerModal');
-        function closeRegisterModal() {
-            registerModal.style.display = 'none';
-        }
-        showRegisterModalBtn.onclick = function(e) {
-            e.preventDefault();
-            registerModal.style.display = 'flex';
-            document.getElementById('register-name').focus();
-        };
-        // 邮箱格式校验
-        function validateRegisterForm() {
-            const email = document.getElementById('register-email').value.trim();
-            const errorDiv = document.getElementById('registerEmailError');
-            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailPattern.test(email)) {
-                errorDiv.textContent = '请输入有效的邮箱地址';
-                errorDiv.style.display = 'block';
-                return false;
-            }
-            errorDiv.style.display = 'none';
-            return true;
-        }
-        // ESC关闭弹窗
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeRegisterModal();
-        });
-        // 点击遮罩关闭弹窗
-        registerModal.addEventListener('click', function(e) {
-            if (e.target === registerModal) closeRegisterModal();
-        });
-    </script>
-</body>
+    <!-- 忘记密码弹窗 -->
+    <div id="forgotPasswordModal" class="modal">
+      <div class="modal-content" style="max-width:400px;">
+        <div class="modal-title" style="display:flex;align-items:center;gap:0.5em;">
+          <i class="fa fa-key" style="color:var(--accent);"></i>
+          重置密码
+        </div>
+        <form id="forgotPasswordForm">
+          <div class="form-group">
+            <label for="forgot-email"><i class="fa fa-envelope"></i></label>
+            <input type="email" id="forgot-email" required class="login-input" placeholder="请输入注册邮箱">
+          </div>
+          <div id="forgotPasswordTip" class="form-error" style="display:none;"></div>
+          <div class="actions" style="display:flex;gap:1em;justify-content:flex-end;margin-top:1em;">
+            <button type="submit" class="btn btn-primary" id="forgotSendBtn">
+              <span id="forgotSendBtnText">发送重置邮件</span>
+              <span id="forgotSendBtnLoading" class="loading" style="display:none;"></span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="cancelForgotPasswordModal">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="/js/login.js"></script>
+ </body>
 </html>

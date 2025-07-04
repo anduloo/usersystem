@@ -18,7 +18,8 @@ const getMe = async (req, res) => {
         role: true,
         createdAt: true,
         updatedAt: true,
-        wechatOpenId: true
+        wechatOpenId: true,
+        isSuperAdmin: true, // 新增
       },
     });
 

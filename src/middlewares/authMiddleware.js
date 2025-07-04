@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
 
 const authMiddleware = async (req, res, next) => {
+  // 增强API路径判断
+  const isApi = (req.path && req.path.startsWith('/api/')) || (req.originalUrl && req.originalUrl.startsWith('/api/'));
   let token = null;
 
   // 1. 优先从 cookie 获取 token
@@ -19,7 +21,7 @@ const authMiddleware = async (req, res, next) => {
 
   if (!token) {
     // 页面请求重定向到登录，API请求返回401
-    if (req.path.startsWith('/api/')) {
+    if (isApi) {
       return res.status(401).json({ message: '认证失败：缺少Token' });
     }
     return res.redirect('/login?error=请先登录');
@@ -29,29 +31,42 @@ const authMiddleware = async (req, res, next) => {
     // 4. 验证 token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 5. 在数据库中查找用户，确保用户存在
+    // 5. 在数据库中查找用户，确保用户存在，并校验tokenVersion和currentSession
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, email: true, role: true, isSuperAdmin: true }
+      select: { id: true, email: true, role: true, isSuperAdmin: true, tokenVersion: true, currentSession: true }
     });
 
     if (!user) {
-      if (req.path.startsWith('/api/')) {
+      if (isApi) {
         return res.status(401).json({ message: '认证失败：用户不存在' });
       }
       return res.redirect('/login?error=用户不存在');
+    }
+
+    // 新增校验tokenVersion和sessionId
+    if (
+      typeof decoded.tokenVersion === 'undefined' ||
+      typeof decoded.sessionId === 'undefined' ||
+      user.tokenVersion !== decoded.tokenVersion ||
+      user.currentSession !== decoded.sessionId
+    ) {
+      if (isApi) {
+        return res.status(401).json({ message: '认证失败：Token已失效' });
+      }
+      return res.redirect('/login?error=Token已失效');
     }
 
     req.user = user;
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      if (req.path.startsWith('/api/')) {
+      if (isApi) {
         return res.status(401).json({ message: '认证失败：Token已过期' });
       }
       return res.redirect('/login?error=Token已过期');
     }
-    if (req.path.startsWith('/api/')) {
+    if (isApi) {
       return res.status(401).json({ message: '认证失败：无效的Token' });
     }
     return res.redirect('/login?error=无效的Token');

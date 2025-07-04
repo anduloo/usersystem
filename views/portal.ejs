@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>应用门户</title>
     <link href="/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/portal.css">
+    <link rel="stylesheet" href="/css/pages/portal-page.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components/form.css">
+    <link rel="stylesheet" href="/css/components/modal.css">
+    <link rel="stylesheet" href="/css/components/table.css">
+    <link rel="stylesheet" href="/css/components/dropdown.css">
 </head>
 <body>
     <div class="container">
@@ -58,15 +63,15 @@
             <form id="change-password-form">
                 <div class="form-group">
                     <label for="old-password"><i class="fa fa-lock"></i></label>
-                    <input type="password" id="old-password" placeholder="当前密码" required autocomplete="current-password">
+                    <input type="password" id="old-password" class="styled-input" placeholder="当前密码" required autocomplete="current-password">
                 </div>
                 <div class="form-group">
                     <label for="new-password"><i class="fa fa-lock"></i></label>
-                    <input type="password" id="new-password" placeholder="新密码" required autocomplete="new-password">
+                    <input type="password" id="new-password" class="styled-input" placeholder="新密码" required autocomplete="new-password">
                 </div>
                 <div class="form-group">
                     <label for="confirm-password"><i class="fa fa-lock"></i></label>
-                    <input type="password" id="confirm-password" placeholder="确认新密码" required autocomplete="new-password">
+                    <input type="password" id="confirm-password" class="styled-input" placeholder="确认新密码" required autocomplete="new-password">
                 </div>
                 <div id="change-password-error" class="form-error" style="display:none;"></div>
                 <div class="actions">
@@ -78,21 +83,21 @@
     </div>
 
     <!-- 消息中心弹窗 -->
-    <div id="portal-msg-modal" class="modal" style="display:none;z-index:2000;">
-      <div class="modal-content" style="max-width:520px;min-width:340px;">
-        <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;">
+    <div id="portal-msg-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-title">
           <span><i class="fa fa-bell"></i> 消息中心</span>
-          <button id="portal-msg-send-btn" class="btn btn-primary" style="font-size:0.95em;padding:0.3em 1.1em;">发送消息</button>
+          <button id="portal-msg-send-btn" class="btn btn-primary">发送消息</button>
         </div>
-        <div id="portal-msg-list" style="max-height:340px;overflow-y:auto;margin:1.2em 0 0.5em 0;"></div>
-        <div style="text-align:right;margin-top:0.5em;">
+        <div id="portal-msg-list"></div>
+        <div class="actions">
           <button class="btn btn-secondary" id="portal-msg-close">关闭</button>
         </div>
       </div>
     </div>
     <!-- 发送消息弹窗 -->
-    <div id="portal-msg-send-modal" class="modal" style="display:none;z-index:2100;">
-      <div class="modal-content" style="max-width:400px;">
+    <div id="portal-msg-send-modal" class="modal" style="display:none;">
+      <div class="modal-content">
         <div class="modal-title"><i class="fa fa-envelope"></i> 发送消息</div>
         <form id="portal-msg-send-form">
           <div class="form-group">
@@ -107,394 +112,23 @@
             <button type="submit" class="btn btn-primary">发送</button>
             <button type="button" class="btn btn-secondary" id="portal-msg-send-cancel">取消</button>
           </div>
-          <div id="portal-msg-send-tip" style="color:#48bb78;margin-top:8px;display:none;"></div>
+          <div id="portal-msg-send-tip" class="msg-send-tip"></div>
         </form>
       </div>
     </div>
     <!-- 消息详情弹窗 -->
-    <div id="portal-msg-detail-modal" class="modal" style="display:none;z-index:2200;">
-      <div class="modal-content" style="max-width:400px;">
+    <div id="portal-msg-detail-modal" class="modal" style="display:none;">
+      <div class="modal-content">
         <div class="modal-title">消息详情</div>
-        <div id="portal-msg-detail-content" style="margin:1.2em 0;"></div>
+        <div id="portal-msg-detail-content"></div>
         <div class="actions">
           <button type="button" class="btn btn-secondary" id="portal-msg-detail-close">关闭</button>
         </div>
       </div>
     </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tokenKey = 'jwt_token';
-            const userInfoContainer = document.getElementById('user-info');
-            const appContainer = document.getElementById('app-container');
-            const loginUrl = `/login`;
-            
-            let token = null;
-            
-            // 从URL获取token
-            const params = new URLSearchParams(window.location.search);
-            const tokenFromUrl = params.get('token');
-            
-            if (tokenFromUrl) {
-                localStorage.setItem(tokenKey, tokenFromUrl);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                token = tokenFromUrl;
-            } else {
-                token = localStorage.getItem(tokenKey);
-            }
-            
-            if (!token) {
-                window.location.href = loginUrl;
-                return;
-            }
-            
-            // 获取门户数据
-            fetch('/api/portal', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-            .then(response => {
-                if (response.status === 401) {
-                    localStorage.removeItem(tokenKey);
-                    window.location.href = loginUrl;
-                    throw new Error('认证失败');
-                }
-                if (!response.ok) throw new Error('获取数据失败');
-                return response.json();
-            })
-            .then(data => {
-                renderUserInfo(data.user);
-                renderApps(data.projects, data.defaultApps, data.user);
-                appContainer.style.display = '';
-            })
-            .catch(error => {
-                appContainer.innerHTML = `
-                    <div class="error-message">
-                        <i class="fa fa-exclamation-triangle"></i>
-                        加载应用失败，请尝试刷新或重新登录
-                    </div>
-                `;
-                appContainer.style.display = '';
-            });
-            
-            function renderUserInfo(user) {
-                if (!user) return;
-                userInfoContainer.innerHTML = `<span>欢迎，${user.name ? user.name : user.email}</span>`;
-            }
-            
-            function renderApps(projects = [], defaultApps = [], user = {}) {
-                // 合并管理员的后台管理卡片
-                let appsToShow = [...projects];
-                if (defaultApps && defaultApps.length > 0) {
-                    appsToShow = appsToShow.concat(defaultApps);
-                }
-                if (appsToShow.length === 0) {
-                    appContainer.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fa fa-folder-open"></i>
-                            <h3>暂无应用</h3>
-                            <p>您目前没有被分配到任何应用</p>
-                        </div>
-                    `;
-                    return;
-                }
-                let html = '<div class="apps-grid">';
-                appsToShow.forEach(app => {
-                    const icon = getAppIcon(app.name);
-                    html += `
-                        <a href="#" class="app-card" data-url="${app.url}" data-id="${app.id || ''}">
-                            <h3>
-                                <i class="fa ${icon}"></i>
-                                ${app.name}
-                            </h3>
-                            <p>${app.description || '点击访问此应用'}</p>
-                            <div class="app-meta">
-                                <i class="fa fa-external-link"></i>
-                                <span>点击访问</span>
-                            </div>
-                        </a>
-                    `;
-                });
-                html += '</div>';
-                appContainer.innerHTML = html;
-                // 绑定点击事件
-                document.querySelectorAll('.app-card').forEach(card => {
-                    card.onclick = (e) => {
-                        e.preventDefault();
-                        const url = card.getAttribute('data-url');
-                        const projectId = card.getAttribute('data-id');
-                        if (projectId && projectId !== 'admin') {
-                            // 异步发送日志，不阻塞跳转
-                            fetch('/api/users/visit-project', {
-                                method: 'POST',
-                                headers: { 
-                                    'Content-Type': 'application/json', 
-                                    'Authorization': `Bearer ${token}` 
-                                },
-                                body: JSON.stringify({ projectId: Number(projectId) })
-                            }).catch(() => {});
-                        }
-                        if (url) {
-                            window.location.href = url;
-                        }
-                    };
-                });
-            }
-            
-            function getAppIcon(appName) {
-                const name = appName.toLowerCase();
-                if (name.includes('管理') || name.includes('admin')) return 'fa-cogs';
-                if (name.includes('数据') || name.includes('data')) return 'fa-database';
-                if (name.includes('报表') || name.includes('report')) return 'fa-bar-chart';
-                if (name.includes('用户') || name.includes('user')) return 'fa-users';
-                if (name.includes('系统') || name.includes('system')) return 'fa-desktop';
-                if (name.includes('设置') || name.includes('setting')) return 'fa-cog';
-                if (name.includes('文件') || name.includes('file')) return 'fa-folder';
-                if (name.includes('消息') || name.includes('message')) return 'fa-envelope';
-                return 'fa-cube'; // 默认图标
-            }
-
-            // 顶部栏下拉菜单逻辑
-            const dropdownToggle = document.getElementById('portal-dropdown').querySelector('.dropdown-toggle');
-            const dropdownMenu = document.getElementById('dropdown-menu');
-            const dropdown = document.getElementById('portal-dropdown');
-
-            // 让下拉菜单弹出到body层，避免被遮挡
-            function showDropdownMenu() {
-                const rect = dropdownToggle.getBoundingClientRect();
-                const headerRect = document.querySelector('.header').getBoundingClientRect();
-                dropdownMenu.style.position = 'absolute';
-                dropdownMenu.style.zIndex = 9999;
-                dropdownMenu.style.display = 'block';
-                // 右对齐 header
-                const right = window.innerWidth - headerRect.right + 24; // 24为header右侧padding，可根据实际情况调整
-                dropdownMenu.style.right = right + 'px';
-                dropdownMenu.style.left = 'auto';
-                dropdownMenu.style.top = (rect.bottom + window.scrollY) + 'px';
-                dropdownMenu.style.minWidth = rect.width + 'px';
-                document.body.appendChild(dropdownMenu);
-            }
-            function hideDropdownMenu() {
-                dropdownMenu.style.display = 'none';
-                // 还原到原位，避免DOM混乱
-                dropdown.appendChild(dropdownMenu);
-            }
-            dropdownToggle.onclick = function(e) {
-                e.stopPropagation();
-                showDropdownMenu();
-            };
-            document.body.addEventListener('click', function() {
-                hideDropdownMenu();
-            });
-
-            // "修改密码"点击事件
-            document.getElementById('change-password-btn').onclick = function() {
-                document.getElementById('change-password-modal').style.display = 'flex';
-                document.getElementById('old-password').focus();
-            };
-
-            // 关闭修改密码弹窗
-            document.getElementById('cancel-change-password-modal').onclick = function() {
-                document.getElementById('change-password-modal').style.display = 'none';
-                document.getElementById('change-password-form').reset();
-                document.getElementById('change-password-error').style.display = 'none';
-            };
-
-            // 提交修改密码
-            document.getElementById('change-password-form').onsubmit = async function(e) {
-                e.preventDefault();
-                const oldPassword = document.getElementById('old-password').value.trim();
-                const newPassword = document.getElementById('new-password').value.trim();
-                const confirmPassword = document.getElementById('confirm-password').value.trim();
-                const errorDiv = document.getElementById('change-password-error');
-                if (newPassword.length < 6) {
-                    errorDiv.textContent = '新密码不能少于6位';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                if (newPassword !== confirmPassword) {
-                    errorDiv.textContent = '两次输入的新密码不一致';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                try {
-                    const res = await fetch('/api/users/me/change-password', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
-                        body: JSON.stringify({ oldPassword, newPassword })
-                    });
-                    if (res.ok) {
-                        errorDiv.textContent = '密码修改成功';
-                        errorDiv.style.display = 'block';
-                        document.getElementById('change-password-modal').style.display = 'none';
-                    } else {
-                        errorDiv.textContent = '密码修改失败，请重试';
-                        errorDiv.style.display = 'block';
-                    }
-                } catch (error) {
-                    errorDiv.textContent = '发生错误，请重试';
-                    errorDiv.style.display = 'block';
-                }
-            };
-
-            // "退出登录"点击事件
-            document.getElementById('logout-btn').onclick = function() {
-                localStorage.removeItem('jwt_token');
-                window.location.href = '/login';
-            };
-
-            // ====== 消息中心功能 ======
-            let portalMsgList = [];
-            let portalMsgUnread = false;
-            const portalMsgBell = document.getElementById('portal-msg-bell');
-            const portalMsgDot = document.getElementById('portal-msg-dot');
-            const portalMsgModal = document.getElementById('portal-msg-modal');
-            const portalMsgListDiv = document.getElementById('portal-msg-list');
-            const portalMsgSendBtn = document.getElementById('portal-msg-send-btn');
-            const portalMsgSendModal = document.getElementById('portal-msg-send-modal');
-            const portalMsgSendForm = document.getElementById('portal-msg-send-form');
-            const portalMsgSendCancel = document.getElementById('portal-msg-send-cancel');
-            const portalMsgSendTip = document.getElementById('portal-msg-send-tip');
-            const portalMsgDetailModal = document.getElementById('portal-msg-detail-modal');
-            const portalMsgDetailContent = document.getElementById('portal-msg-detail-content');
-            const portalMsgDetailClose = document.getElementById('portal-msg-detail-close');
-            const portalMsgClose = document.getElementById('portal-msg-close');
-
-            // 加载消息
-            async function loadPortalMessages() {
-                try {
-                    const res = await fetch('/api/users/messages', { headers: { Authorization: 'Bearer ' + token } });
-                    portalMsgList = await res.json();
-                    portalMsgUnread = portalMsgList.some(m => !m.isRead);
-                    portalMsgDot.style.display = portalMsgUnread ? 'block' : 'none';
-                    renderPortalMsgList();
-                } catch {}
-            }
-            function renderPortalMsgList() {
-                if (!portalMsgList.length) {
-                    portalMsgListDiv.innerHTML = '<div style="color:#888;text-align:center;padding:2em 0;">暂无消息</div>';
-                    return;
-                }
-                portalMsgListDiv.innerHTML = `<table class="portal-msg-table">
-                    <thead><tr><th style='width:2.5em;'></th><th style='min-width:80px;'>标题</th><th style='min-width:120px;max-width:180px;'>时间</th><th style='width:70px;'>状态</th><th style='width:120px;'>操作</th></tr></thead><tbody>` +
-                    portalMsgList.map(msg => {
-                        return `<tr style="background:${msg.isRead ? '#fff' : '#f0f6ff'};box-shadow:0 1px 4px #e5e7eb;">
-                            <td style='text-align:center;'><i class="fa fa-envelope${msg.isRead ? '' : '-o'}" style="color:${msg.isRead ? '#48bb78' : '#ed8936'};"></i></td>
-                            <td style='max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;'>${msg.title}</td>
-                            <td style='color:#888;font-size:0.97em;'>${new Date(msg.createdAt).toLocaleString()}</td>
-                            <td>${msg.isRead ? '<span style=\"color:#48bb78;\">已读</span>' : '<span style=\"color:#ed8936;\">未读</span>'}</td>
-                            <td>
-                                <button class="btn btn-secondary" onclick="showPortalMsgDetail(${msg.id})">详情</button>
-                                ${!msg.isRead ? `<button class=\"btn btn-primary\" onclick=\"markPortalMsgRead(${msg.id})\">已读</button>` : ''}
-                                <button class="btn btn-danger" onclick="deletePortalMsg(${msg.id})">删除</button>
-                            </td>
-                        </tr>`;
-                    }).join('') + '</tbody></table>';
-            }
-            // bell点击弹窗
-            portalMsgBell.onclick = function(e) {
-                e.stopPropagation();
-                portalMsgModal.style.display = 'flex';
-                loadPortalMessages();
-            };
-            portalMsgClose.onclick = function() {
-                portalMsgModal.style.display = 'none';
-            };
-            // 发送消息弹窗
-            portalMsgSendBtn.onclick = function() {
-                portalMsgSendModal.style.display = 'flex';
-                portalMsgSendForm.reset();
-                portalMsgSendTip.style.display = 'none';
-            };
-            portalMsgSendCancel.onclick = function() {
-                portalMsgSendModal.style.display = 'none';
-            };
-            portalMsgSendForm.onsubmit = async function(e) {
-                e.preventDefault();
-                const form = new FormData(portalMsgSendForm);
-                const data = {
-                    title: form.get('title'),
-                    content: form.get('content'),
-                    toUserIds: [''] // 后端约定：空字符串为管理员
-                };
-                try {
-                    const res = await fetch('/api/users/messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                        body: JSON.stringify(data)
-                    });
-                    const result = await res.json();
-                    if (result.success) {
-                        portalMsgSendTip.textContent = '发送成功！';
-                        portalMsgSendTip.style.display = 'block';
-                        setTimeout(() => {
-                            portalMsgSendModal.style.display = 'none';
-                            portalMsgSendForm.reset();
-                            portalMsgSendTip.style.display = 'none';
-                            loadPortalMessages();
-                        }, 1200);
-                    } else {
-                        portalMsgSendTip.textContent = result.message || '发送失败';
-                        portalMsgSendTip.style.display = 'block';
-                    }
-                } catch {
-                    portalMsgSendTip.textContent = '发送失败';
-                    portalMsgSendTip.style.display = 'block';
-                }
-            };
-            // 消息详情
-            window.showPortalMsgDetail = function(id) {
-                const msg = portalMsgList.find(m => m.id === id);
-                if (!msg) return;
-                let sender = msg.fromUserId;
-                if (msg.fromUserId && window.allUsersForMsg) {
-                    const u = window.allUsersForMsg.find(u => u.id === msg.fromUserId);
-                    if (u) sender = u.name || u.email;
-                }
-                portalMsgDetailContent.innerHTML = `
-                    <div class='portal-msg-detail-content'>
-                        <div class='msg-meta'>
-                            <div class='sender'><b>发送人：</b>${sender || '系统'}</div>
-                            <div class='time'><i class='fa fa-clock-o'></i> ${new Date(msg.createdAt).toLocaleString()}</div>
-                        </div>
-                        <div class='msg-title'><b>标题：</b><span>${msg.title}</span></div>
-                        <div class='msg-content-label'><b>内容：</b></div>
-                        <div class='msg-content-box'>${msg.content}</div>
-                    </div>
-                `;
-                portalMsgDetailModal.style.display = 'flex';
-                if (!msg.isRead) markPortalMsgRead(id);
-            };
-            portalMsgDetailClose.onclick = function() {
-                portalMsgDetailModal.style.display = 'none';
-            };
-            // 标记已读
-            window.markPortalMsgRead = async function(id) {
-                await fetch(`/api/users/messages/${id}/read`, { method: 'POST', headers: { Authorization: 'Bearer ' + token } });
-                await loadPortalMessages();
-            };
-            // 删除
-            window.deletePortalMsg = async function(id) {
-                if (!confirm('确定要删除这条消息吗？')) return;
-                await fetch(`/api/users/messages/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
-                await loadPortalMessages();
-            };
-            // 点击弹窗外部关闭
-            [portalMsgModal, portalMsgSendModal, portalMsgDetailModal].forEach(modal => {
-                modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-            });
-            // 页面加载时轮询未读消息
-            setInterval(loadPortalMessages, 60000);
-            loadPortalMessages();
-
-            // 加载所有用户用于消息详情显示
-            window.allUsersForMsg = [];
-            (async function(){
-                try {
-                    const res = await fetch('/api/users', { headers: { Authorization: 'Bearer ' + token } });
-                    if(res.ok) window.allUsersForMsg = await res.json();
-                } catch{}
-            })();
-        });
-    </script>
+    <script src="/js/portal.js"></script>
+    <script src="/js/message.js"></script>
+    <script src="/js/change-password.js"></script>
+    <script src="/js/logout.js"></script>
 </body>
 </html>

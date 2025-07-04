@@ -1,0 +1,1306 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+:root {
+  --main-bg: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  --card-bg: rgba(255,255,255,0.95);
+  --accent: #667eea;
+  --accent2: #764ba2;
+  --text: #2d3748;
+  --muted: #718096;
+  --border: #e2e8f0;
+  --radius: 12px;
+  --shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+  --shadow-hover: 0 8px 32px rgba(102, 126, 234, 0.25);
+  --success: #48bb78;
+  --warning: #ed8936;
+  --danger: #f56565;
+}
+
+body {
+  background: var(--main-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--text);
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.main-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(102, 126, 234, 0.05));
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+}
+
+.main-body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(118, 75, 162, 0.02));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.main-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-body::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+}
+
+.main-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 4px;
+}
+
+.main-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+.card, .bg-white.rounded-xl.shadow-sm, .section-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 2rem;
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.4);
+  position: relative;
+  overflow: visible;
+}
+
+.card::before, .bg-white.rounded-xl.shadow-sm::before, .section-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover, .bg-white.rounded-xl.shadow-sm:hover, .section-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card:hover::before, .bg-white.rounded-xl.shadow-sm:hover::before, .section-card:hover::before {
+  opacity: 1;
+}
+
+/* 表格美化 */
+table, .section-card table {
+  border-radius: var(--radius);
+  box-shadow: none;
+  background: rgba(255,255,255,0.5);
+  overflow: visible;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+table td, .section-card table td {
+  color: var(--text);
+  font-size: 1rem;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.2s ease;
+}
+
+table tr:last-child td, .section-card table tr:last-child td {
+  border-bottom: none;
+}
+
+table tbody tr {
+  transition: all 0.2s ease;
+}
+
+table tbody tr:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .main-body {
+    padding: 1.5rem;
+  }
+  .card, .section-card {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-body {
+    padding: 1rem;
+  }
+  .card, .section-card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .stat-card-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .stat-card-divider {
+    width: 100%;
+    height: 1px;
+    margin: 1rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  .btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* 让表格内容自适应宽度，防止自动换行 */
+#access-log-table td:nth-child(2), /* 访问时间 */
+#access-log-table td:nth-child(3), /* 项目ID */
+#access-log-table td:nth-child(4)  /* IP */ {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* 优化统计表格卡片宽度和布局 */
+#dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 > div,
+#dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 .bg-white.rounded-xl.shadow-sm {
+  max-width: 220px;
+  min-width: 150px;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  #dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 > div,
+  #dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 .bg-white.rounded-xl.shadow-sm {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+/* 统计表格卡片宽度（如项目访问次数等） */
+#dashboard-section .grid.grid-cols-1.lg\:grid-cols-2 > div,
+#dashboard-section .grid.grid-cols-1.lg\:grid-cols-2 .bg-white.rounded-xl.shadow-sm {
+  max-width: 480px;
+  min-width: 180px;
+  margin-bottom: 0;
+}
+@media (max-width: 900px) {
+  #dashboard-section .grid.grid-cols-1.lg\:grid-cols-2 > div,
+  #dashboard-section .grid.grid-cols-1.lg\:grid-cols-2 .bg-white.rounded-xl.shadow-sm {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+/* 用户登录次数和城市登录次数分为两个卡片，内容上下排列 */
+#dashboard-user-login-table {
+  margin-bottom: 1.2rem;
+}
+
+/* 总用户数/总项目数卡片横向排列且紧凑居左 */
+#dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  gap: 2.2rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 900px) {
+  #dashboard-section .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+}
+
+/* 极简横向分组统计卡片样式 */
+.stat-card-group {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  box-shadow: 0 0 20px 0px rgba(59, 93, 246, 0.1), 0 1.5px 8px rgba(96,165,250,0.08);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  padding: 1.2rem 1.5rem 1.5rem 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.stat-card-title {
+  font-size: 1.08rem;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+.stat-card-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+}
+.stat-card-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+.stat-card-label {
+  color: #374151;
+  font-size: 1.01rem;
+  margin-bottom: 0.3em;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+.stat-card-value {
+  color: #23b7c4;
+  font-size: 2.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: 0.2em;
+}
+.stat-card-unit {
+  font-size: 1.1rem;
+  color: #60a5fa;
+  margin-left: 0.1em;
+}
+.stat-card-divider {
+  width: 1px;
+  background: #f3f6fa;
+  margin: 0 1.5rem;
+}
+@media (max-width: 700px) {
+  .stat-card-row {
+    flex-direction: column;
+  }
+  .stat-card-divider {
+    width: 100%;
+    height: 1px;
+    margin: 1rem 0;
+  }
+}
+
+/* 统一统计表格卡片大小和表格对齐 */
+.dashboard-stat-row {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+.dashboard-stat-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.12), 0 4px 16px rgba(118, 75, 162, 0.08);
+  padding: 1.8rem;
+  border: 1px solid rgba(255,255,255,0.6);
+  max-width: 400px;
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.dashboard-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), #667eea);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.dashboard-stat-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.03) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.18), 0 8px 24px rgba(118, 75, 162, 0.12);
+}
+
+.dashboard-stat-card:hover::before {
+  opacity: 1;
+}
+
+.dashboard-stat-card:hover::after {
+  opacity: 1;
+}
+
+.dashboard-stat-card .stat-card-title {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.dashboard-stat-card .stat-card-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.dashboard-stat-card:hover .stat-card-title::before {
+  width: 8px;
+  height: 24px;
+}
+
+/* Dashboard统计筛选控件样式 */
+.dashboard-filter-container {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.12), 0 4px 16px rgba(118, 75, 162, 0.08);
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.6);
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 10;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.dashboard-filter-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), #667eea);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.dashboard-filter-container::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.03) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.dashboard-filter-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.18), 0 8px 24px rgba(118, 75, 162, 0.12);
+}
+
+.dashboard-filter-container:hover::before {
+  opacity: 1;
+}
+
+.dashboard-filter-container:hover::after {
+  opacity: 1;
+}
+
+.dashboard-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-filter-title i {
+  color: var(--accent2);
+  font-size: 1.4rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  padding: 0.8rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.dashboard-filter-container:hover .dashboard-filter-title i {
+  transform: scale(1.1) rotate(5deg);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+}
+
+.dashboard-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 2;
+}
+
+.dashboard-filter-controls .date-filter {
+  padding: 0.8rem 1.2rem;
+  border: 2px solid rgba(102, 126, 234, 0.15);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.9);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 160px;
+  font-weight: 500;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+}
+
+.dashboard-filter-controls .date-filter:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 16px rgba(102, 126, 234, 0.2);
+  background: white;
+  transform: translateY(-2px);
+}
+
+.dashboard-filter-controls .date-filter:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
+  transform: translateY(-1px);
+}
+
+.dashboard-filter-controls span {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.dashboard-filter-container:hover .dashboard-filter-controls span {
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--accent);
+}
+
+.dashboard-filter-controls .btn {
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 600;
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-filter-controls .btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.dashboard-filter-controls .btn:hover::before {
+  left: 100%;
+}
+
+.dashboard-filter-controls .btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.dashboard-filter-controls .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+.dashboard-filter-controls .btn-secondary {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  color: var(--accent);
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.dashboard-filter-controls .btn-secondary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.25);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.dashboard-filter-controls .btn i {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.dashboard-filter-controls .btn:hover i {
+  transform: scale(1.1);
+}
+
+/* 柱状图容器样式 */
+.chart-container {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  margin-top: 1rem;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0;
+  transition: none;
+}
+
+.chart-container:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.chart-container canvas {
+  border-radius: 8px;
+  background: transparent;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .dashboard-filter-container {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .dashboard-filter-controls .date-filter {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .dashboard-filter-controls .btn {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .dashboard-filter-title {
+    font-size: 1.1rem;
+    margin-bottom: 1.2rem;
+  }
+  
+  .dashboard-filter-title i {
+    font-size: 1.2rem;
+    padding: 0.6rem;
+  }
+  
+  .chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-filter-container {
+    padding: 1.2rem;
+    border-radius: 12px;
+  }
+  
+  .dashboard-filter-title {
+    font-size: 1rem;
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: center;
+  }
+  
+  .dashboard-filter-title i {
+    font-size: 1.1rem;
+    padding: 0.5rem;
+  }
+  
+  .dashboard-filter-controls .date-filter {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .dashboard-filter-controls .btn {
+    padding: 0.7rem 1.2rem;
+    font-size: 0.9rem;
+  }
+  
+  .chart-container {
+    height: 200px;
+  }
+}
+
+/* Admin用户权限管理按钮特殊样式 */
+.btn.btn-secondary[onclick*="managePermissions"] {
+  position: relative;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.btn.btn-secondary[onclick*="managePermissions"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+}
+
+.btn.btn-secondary[onclick*="managePermissions"] i {
+  transition: transform 0.3s ease;
+}
+
+.btn.btn-secondary[onclick*="managePermissions"]:hover i {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* 权限管理弹窗增强样式 */
+.modal-content[style*="max-width: 600px"] {
+  max-width: 600px !important;
+}
+
+.modal-content[style*="max-width: 600px"] .modal-title {
+  color: var(--accent);
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.modal-content[style*="max-width: 600px"] .modal-subtitle {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* 权限统计样式 */
+#permissions-stats {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  padding: 1.2rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+#permissions-stats div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#permissions-stats span {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* 批量操作按钮样式 */
+#permissions-modal .btn-secondary {
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+  color: var(--accent);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+#permissions-modal .btn-secondary:hover {
+  background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+  color: var(--accent2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+/* 搜索框样式 */
+#permission-search {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  width: 200px;
+  background: rgba(255,255,255,0.8);
+  transition: all 0.3s ease;
+}
+
+#permission-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+}
+
+/* 操作提示样式 */
+#permissions-modal div[style*="background: #f0f9ff"] {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05)) !important;
+  border: 1px solid rgba(102, 126, 234, 0.2) !important;
+  border-radius: var(--radius) !important;
+  padding: 1rem !important;
+  margin-bottom: 8px !important;
+  font-size: 0.9rem !important;
+  color: var(--accent) !important;
+}
+
+/* 重置密码弹窗特殊样式 */
+#reset-password-modal {
+  z-index: 3000 !important;
+}
+
+#reset-password-modal .modal-title {
+  color: var(--danger);
+  border-bottom: 2px solid rgba(245, 101, 101, 0.2);
+  padding-bottom: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+#reset-password-modal .modal-subtitle {
+  color: var(--muted);
+  font-style: italic;
+}
+
+#reset-password-modal div[style*="background: #fef2f2"] {
+  background: linear-gradient(135deg, rgba(245, 101, 101, 0.05), rgba(229, 62, 62, 0.05)) !important;
+  border: 1px solid rgba(245, 101, 101, 0.2) !important;
+  border-radius: var(--radius) !important;
+  padding: 1rem !important;
+  margin-bottom: 1.5rem !important;
+  font-size: 0.9rem !important;
+  color: var(--danger) !important;
+}
+
+#reset-password-modal .form-group {
+  border: 1px solid rgba(245, 101, 101, 0.2);
+  background: rgba(254, 242, 242, 0.5);
+}
+
+#reset-password-modal .form-group:focus-within {
+  border-color: var(--danger);
+  background: white;
+  box-shadow: 0 4px 16px rgba(245, 101, 101, 0.2);
+}
+
+#reset-password-modal .form-group label {
+  color: var(--danger);
+}
+
+#reset-password-modal .btn-primary {
+  background: linear-gradient(135deg, var(--danger), #e53e3e);
+  color: white;
+  box-shadow: 0 4px 16px rgba(245, 101, 101, 0.3);
+}
+
+#reset-password-modal .btn-primary:hover {
+  background: linear-gradient(135deg, #e53e3e, var(--danger));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 101, 101, 0.4);
+}
+
+/* 表单错误提示样式 */
+.form-error {
+  background: linear-gradient(135deg, rgba(245, 101, 101, 0.1), rgba(229, 62, 62, 0.1));
+  border: 1px solid rgba(245, 101, 101, 0.3);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  color: var(--danger);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* 状态标签样式 */
+.status-active {
+  background: linear-gradient(135deg, var(--success), #38a169);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-inactive {
+  background: linear-gradient(135deg, var(--muted), #a0aec0);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading {
+  animation: spin 1s linear infinite;
+}
+
+/* 页面切换动画 */
+section {
+  animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 初始状态：只有Dashboard显示，其他section隐藏 */
+#user-management,
+#project-management,
+#admin-log-section,
+#login-log-section,
+#access-log-section {
+  display: none;
+}
+
+#dashboard-section {
+  display: block;
+}
+
+/* 用户编辑弹窗特殊样式 */
+#user-edit-modal .modal-content {
+  max-width: 500px !important;
+}
+
+#user-edit-modal .form-group input[readonly] {
+  background: rgba(102, 126, 234, 0.05);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+#user-edit-modal .form-group input[readonly]:focus {
+  background: rgba(102, 126, 234, 0.05);
+  border-color: rgba(102, 126, 234, 0.2);
+  box-shadow: none;
+}
+
+/* 功能按钮组样式 */
+#user-edit-modal .btn-secondary {
+  background: linear-gradient(135deg, #f7fafc, #edf2f7);
+  color: var(--accent);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  font-size: 0.9rem;
+  padding: 0.8rem 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+#user-edit-modal .btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #edf2f7, #e2e8f0);
+  color: var(--accent2);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+#user-edit-modal .btn-secondary:disabled {
+  background: rgba(102, 126, 234, 0.05);
+  color: var(--muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#user-edit-modal .btn-secondary:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 功能按钮组容器样式 */
+#user-edit-modal div[style*="background: rgba(102, 126, 234, 0.05)"] {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), rgba(118, 75, 162, 0.03)) !important;
+  border: 1px solid rgba(102, 126, 234, 0.15) !important;
+  border-radius: var(--radius) !important;
+  padding: 1.2rem !important;
+  margin: 8px 0 !important;
+}
+
+#user-edit-modal div[style*="background: rgba(102, 126, 234, 0.05)"] h4 {
+  margin: 0 0 1rem 0 !important;
+  color: var(--accent) !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+}
+
+#user-edit-modal div[style*="background: rgba(102, 126, 234, 0.05)"] > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.8rem !important;
+}
+
+/* 分页按钮样式 */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.btn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 分页控件样式 */
+#user-pagination,
+#project-pagination,
+#admin-log-pagination,
+#login-log-pagination,
+#access-log-pagination {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+/* 搜索框样式 */
+#user-search {
+  transition: all 0.3s ease;
+}
+
+#user-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+}
+
+/* 每页显示选择器样式 */
+#user-page-size,
+#project-page-size,
+#admin-log-page-size,
+#login-log-page-size,
+#access-log-page-size {
+  transition: all 0.3s ease;
+}
+
+#user-page-size:focus,
+#project-page-size:focus,
+#admin-log-page-size:focus,
+#login-log-page-size:focus,
+#access-log-page-size:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+}
+
+#users-table th, #users-table td,
+#projects-table th, #projects-table td {
+  padding: 0.6rem 0.8rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+#users-table td, #projects-table td {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+#reset-password-modal .modal-content {
+  z-index: 3001 !important;
+  position: relative;
+}
+
+/* 统一 input/textarea/多选输入框样式 —— 已全部以components/form.css为准，原内容已删除 */
+
+/* 统一管理Tab列表样式 */
+.table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1.2rem;
+}
+.table-toolbar .toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.table-toolbar .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+.search-input {
+  width: 220px;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.8);
+  font-size: 0.8rem;
+  color: var(--text-color, #222);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.search-input:focus {
+  border-color: var(--accent, #667eea);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.12);
+}
+.page-size-select {
+  width: 90px;
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.8);
+  font-size: 0.8rem;
+  color: var(--text-color, #222);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.page-size-select:focus {
+  border-color: var(--accent, #667eea);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.12);
+}
+.toolbar-btns .btn {
+  margin-right: 0;
+}
+.admin-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255,255,255,0.95);
+  border-radius: var(--radius);
+  box-shadow: none;
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+.admin-table th, .admin-table td {
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.08);
+  text-align: left;
+}
+.admin-table th {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.15);
+  text-transform: none;
+  letter-spacing: 0.5px;
+}
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+.admin-table tbody tr {
+  transition: background 0.2s;
+}
+.admin-table tbody tr:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.04), rgba(118, 75, 162, 0.04));
+}
+.admin-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(102,126,234,0.1);
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.admin-pagination .pagination-btns {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.admin-pagination .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+}
+
+/* flatpickr 自定义主题（紫色渐变风格） */
+.flatpickr-calendar {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.18), 0 4px 16px rgba(118, 75, 162, 0.10) !important;
+  border: 1.5px solid var(--accent, #667eea) !important;
+  font-family: inherit;
+  background: linear-gradient(135deg, #fff 80%, #f8f9fa 100%) !important;
+}
+.flatpickr-months .flatpickr-month {
+  background: linear-gradient(90deg, #667eea 60%, #764ba2 100%) !important;
+  color: #fff !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+.flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year {
+  color: #fff !important;
+  font-weight: bold;
+  background: transparent !important;
+}
+.flatpickr-weekdays {
+  background: linear-gradient(90deg, #667eea 60%, #764ba2 100%) !important;
+  color: #fff !important;
+  border-radius: 0 0 0 0 !important;
+}
+.flatpickr-weekday {
+  color: #fff !important;
+  font-weight: 600;
+}
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  border: none !important;
+}
+.flatpickr-day.today {
+  border-color: #667eea !important;
+  color: #667eea !important;
+}
+.flatpickr-day:hover, .flatpickr-day:focus {
+  background: #e0e7ff !important;
+  color: #764ba2 !important;
+  border-radius: 8px !important;
+}
+.flatpickr-day.inRange {
+  background: #ede9fe !important;
+  color: #764ba2 !important;
+}
+.flatpickr-time input, .flatpickr-input[readonly] {
+  border-radius: 8px !important;
+  border: 1.5px solid #667eea !important;
+  background: #f8fafc !important;
+  color: #333 !important;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* flatpickr 输入框美化 */
+input.flatpickr-input[type="text"], input.flatpickr-input[type="date"] {
+  border: 2px solid #667eea !important;
+  border-radius: 8px !important;
+  padding: 0.7em 1em !important;
+  font-size: 1rem !important;
+  background: #f8fafc !important;
+  color: #333 !important;
+  transition: border-color 0.3s;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.08);
+}
+input.flatpickr-input[type="text"]:focus, input.flatpickr-input[type="date"]:focus {
+  border-color: #764ba2 !important;
+  background: #fff !important;
+}
+
+/* 修复输入框内容不显示问题 */
+input.flatpickr-input {
+  color: #333 !important;
+  background: #f8fafc !important;
+  font-size: 1rem !important;
+  font-weight: 500;
+}
+
+/* 权限管理弹窗项目列表美化 */
+.permission-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: linear-gradient(135deg, #f8fafc 80%, #e9e7fa 100%);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.06);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+  border: 1.5px solid rgba(102, 126, 234, 0.08);
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+.permission-item:last-child {
+  margin-bottom: 0;
+}
+.permission-item:hover, .permission-item:focus-within {
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.13);
+  border-color: var(--accent, #667eea);
+  background: linear-gradient(135deg, #e0e7ff 80%, #ede9fe 100%);
+}
+.permission-item input[type="checkbox"] {
+  accent-color: var(--accent, #667eea);
+  width: 1.2em;
+  height: 1.2em;
+  margin-top: 0.2em;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(102, 126, 234, 0.08);
+  transition: border-color 0.2s;
+}
+.permission-item label {
+  font-weight: 600;
+  color: var(--text, #2d3748);
+  font-size: 1rem;
+  cursor: pointer;
+  display: block;
+}
+.permission-item label small {
+  display: block;
+  color: var(--muted, #718096);
+  font-size: 0.92em;
+  font-weight: 400;
+  margin-top: 0.2em;
+}
+.permission-item input[type="checkbox"]:checked + label {
+  color: var(--accent, #667eea);
+} 

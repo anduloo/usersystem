@@ -5,7 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>后台管理</title>
     <link href="/css/font-awesome.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/pages/admin-page.css">
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/components/form.css">
+    <link rel="stylesheet" href="/css/components/modal.css">
+    <link rel="stylesheet" href="/css/components/table.css">
+    <link rel="stylesheet" href="/css/components/sidebar.css">
+    <link rel="stylesheet" href="/css/components/dropdown.css">
+    <link rel="stylesheet" href="/css/components/stat-card.css">
+    <link rel="stylesheet" href="/css/components/header.css">
+    <link rel="stylesheet" href="/css/components/template-editor.css">
+
+    <!-- Chart.js 图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- flatpickr 日期选择器 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+
     <!-- Select2 美化多选下拉 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
@@ -25,6 +43,9 @@
             <a href="#operation-logs" class="sidebar-menu-item" id="tab-logs"><i class="fa fa-history"></i><span>操作日志</span></a>
             <a href="#login-logs" class="sidebar-menu-item" id="tab-login-logs"><i class="fa fa-sign-in"></i><span>登录日志</span></a>
             <a href="#access-logs" class="sidebar-menu-item" id="tab-access-logs"><i class="fa fa-eye"></i><span>访问日志</span></a>
+            <% if (user && user.isSuperAdmin) { %>
+            <a href="#system-config" class="sidebar-menu-item" id="tab-system-config"><i class="fa fa-cogs"></i><span>系统配置</span></a>
+            <% } %>
         </nav>
     </aside>
     <!-- 主内容区 -->
@@ -71,28 +92,44 @@
                             </div>
                         </div>
                     </div>
+                
+                <!-- 时间筛选器 -->
+                <div class="dashboard-filter-container">
+
+                    <div class="dashboard-filter-controls">
+                        <input type="date" id="dashboard-start-date" class="date-filter">
+                        <span>至</span>
+                        <input type="date" id="dashboard-end-date" class="date-filter">
+                        <button id="dashboard-filter-btn" class="btn btn-primary">
+                            <i class="fa fa-search"></i>
+                            筛选
+                        </button>
+                        <button id="dashboard-reset-btn" class="btn btn-secondary">
+                            <i class="fa fa-refresh"></i>
+                            重置
+                        </button>
+                    </div>
+                </div>
+                
                 <!-- 统计表格区块 -->
                 <div class="dashboard-stat-row">
                     <div class="dashboard-stat-card">
                         <h3 class="stat-card-title">项目访问次数</h3>
-                        <table id="dashboard-project-access-table">
-                            <thead><tr><th>项目</th><th>访问次数</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <div class="chart-container">
+                            <canvas id="project-access-chart"></canvas>
+                        </div>
                     </div>
                     <div class="dashboard-stat-card">
                         <h3 class="stat-card-title">用户登录次数</h3>
-                        <table id="dashboard-user-login-table">
-                            <thead><tr><th>用户</th><th>登录次数</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <div class="chart-container">
+                            <canvas id="user-login-chart"></canvas>
+                        </div>
                     </div>
                     <div class="dashboard-stat-card">
                         <h3 class="stat-card-title">城市登录次数</h3>
-                        <table id="dashboard-city-login-table">
-                            <thead><tr><th>城市</th><th>登录次数</th></tr></thead>
-                            <tbody></tbody>
-                        </table>
+                        <div class="chart-container">
+                            <canvas id="city-login-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -332,6 +369,226 @@
                 </div>
               </div>
             </section>
+            <% if (user && user.isSuperAdmin) { %>
+            <section id="system-config-section">
+              <!-- 配置部分 -->
+              <div class="config-section">
+                <div class="config-section-title">
+                  <i class="fa fa-cogs"></i>
+                  <span>系统配置</span>
+                </div>
+                <div class="config-section-content">
+                  <!-- 邮件服务器配置 -->
+                  <div class="card" id="mail-config-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div style="display:flex;align-items:center;gap:0.8rem;">
+                        <i class="fa fa-envelope" style="color:var(--accent2);font-size:1.3rem;"></i>
+                        <span style="font-size:1.2em;font-weight:700;color:var(--accent);">邮件服务器配置</span>
+                      </div>
+                      <div>
+                        <button id="mail-edit-btn" class="btn btn-secondary" type="button">编辑</button>
+                        <button id="mail-save-btn" class="btn btn-primary" type="button" style="display:none;">保存</button>
+                        <button id="mail-cancel-btn" class="btn btn-secondary" type="button" style="display:none;">取消</button>
+                      </div>
+                    </div>
+                    <form id="mail-config-form" style="margin-top:1.5em;">
+                      <div class="form-group">
+                        <label>服务器</label>
+                        <input id="mail-host" class="styled-input" type="text" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>端口</label>
+                        <input id="mail-port" class="styled-input" type="text" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>账号</label>
+                        <input id="mail-user" class="styled-input" type="text" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>密码</label>
+                        <input id="mail-pass" class="styled-input" type="password" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>SSL</label>
+                        <select id="mail-secure" class="styled-input" disabled>
+                          <option value="true">是</option>
+                          <option value="false">否</option>
+                        </select>
+                      </div>
+                      <!-- 测试相关输入框，默认隐藏 -->
+                      <div id="mail-test-fields" style="display:none;">
+                        <div class="form-group">
+                          <label>发件人邮箱</label>
+                          <input id="mail-from" class="styled-input" type="email">
+                        </div>
+                        <div class="form-group">
+                          <label>测试收件人</label>
+                          <input id="mail-test-to" class="styled-input" type="email">
+                        </div>
+                      </div>
+                      <div style="margin-top:1em;">
+                        <button id="mail-test-btn" class="btn btn-secondary" type="button">测试发送</button>
+                        <span id="mail-test-result" style="margin-left:1em;color:var(--muted);display:none;"></span>
+                      </div>
+                    </form>
+                  </div>
+
+                  <!-- 微信公众号配置 -->
+                  <div class="card" id="wechat-config-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div style="display:flex;align-items:center;gap:0.8rem;">
+                        <i class="fa fa-wechat" style="color:var(--accent2);font-size:1.3rem;"></i>
+                        <span style="font-size:1.2em;font-weight:700;color:var(--accent);">微信公众号配置</span>
+                      </div>
+                      <div>
+                        <button id="wechat-edit-btn" class="btn btn-secondary" type="button">编辑</button>
+                        <button id="wechat-save-btn" class="btn btn-primary" type="button" style="display:none;">保存</button>
+                        <button id="wechat-cancel-btn" class="btn btn-secondary" type="button" style="display:none;">取消</button>
+                      </div>
+                    </div>
+                    <form id="wechat-config-form" style="margin-top:1.5em;">
+                      <div class="form-group">
+                        <label>AppID</label>
+                        <input id="wx-appid" class="styled-input" type="text" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>AppSecret</label>
+                        <input id="wx-secret" class="styled-input" type="password" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>Token</label>
+                        <input id="wx-token" class="styled-input" type="password" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label>AESKey</label>
+                        <input id="wx-aeskey" class="styled-input" type="password" readonly>
+                      </div>
+                      <div id="wechat-test-fields" style="display:none;">
+                        <!-- 可根据需要添加测试相关输入 -->
+                      </div>
+                      <div style="margin-top:1em;">
+                        <button id="wechat-test-btn" class="btn btn-secondary" type="button">测试连接</button>
+                        <span id="wechat-test-result" style="margin-left:1em;color:var(--muted);display:none;"></span>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 模板部分 -->
+              <div class="template-section">
+                <div class="config-section-title">
+                  <i class="fa fa-file-text-o"></i>
+                  <span>邮件模板</span>
+                </div>
+                <div class="config-section-content">
+                  <!-- 欢迎邮件模板配置 -->
+                  <div class="card" id="welcome-mail-template-card">
+                    <div class="template-header">
+                      <div class="template-title">
+                        <i class="fa fa-envelope-o"></i>
+                        <span>欢迎邮件模板</span>
+                      </div>
+                      <div class="template-actions">
+                        <button id="save-welcome-mail-template" class="btn btn-primary" type="button">
+                          <i class="fa fa-save"></i>
+                          保存模板
+                        </button>
+                        <button id="preview-welcome-mail-template" class="btn btn-secondary" type="button">
+                          <i class="fa fa-eye"></i>
+                          预览
+                        </button>
+                        <button id="reset-welcome-mail-template" class="btn btn-secondary" type="button">
+                          <i class="fa fa-refresh"></i>
+                          重置
+                        </button>
+                      </div>
+                    </div>
+                    <div class="template-content">
+                      <div class="form-group">
+                        <label for="welcome-mail-template">模板内容</label>
+                        <textarea id="welcome-mail-template" rows="10" class="template-textarea" placeholder="请输入欢迎邮件模板内容..."></textarea>
+                      </div>
+                      <div class="template-variables">
+                        <div class="variables-title">
+                          <i class="fa fa-code"></i>
+                          可用变量
+                        </div>
+                        <div class="variables-list">
+                          <div class="variable-item">
+                            <code>{{username}}</code>
+                            <span>用户名/邮箱</span>
+                          </div>
+                          <div class="variable-item">
+                            <code>{{confirmLink}}</code>
+                            <span>确认链接</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="welcome-mail-template-tip" class="template-tip success" style="display:none;">
+                        <i class="fa fa-check-circle"></i>
+                        保存成功！
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 重置密码邮件模板配置 -->
+                  <div class="card" id="reset-password-mail-template-card">
+                    <div class="template-header">
+                      <div class="template-title">
+                        <i class="fa fa-key"></i>
+                        <span>重置密码邮件模板</span>
+                      </div>
+                      <div class="template-actions">
+                        <button id="save-reset-password-mail-template" class="btn btn-primary" type="button">
+                          <i class="fa fa-save"></i>
+                          保存模板
+                        </button>
+                        <button id="preview-reset-password-mail-template" class="btn btn-secondary" type="button">
+                          <i class="fa fa-eye"></i>
+                          预览
+                        </button>
+                        <button id="reset-reset-password-mail-template" class="btn btn-secondary" type="button">
+                          <i class="fa fa-refresh"></i>
+                          重置
+                        </button>
+                      </div>
+                    </div>
+                    <div class="template-content">
+                      <div class="form-group">
+                        <label for="reset-password-mail-template">模板内容</label>
+                        <textarea id="reset-password-mail-template" rows="10" class="template-textarea" placeholder="请输入重置密码邮件模板内容..."></textarea>
+                      </div>
+                      <div class="template-variables">
+                        <div class="variables-title">
+                          <i class="fa fa-code"></i>
+                          可用变量
+                        </div>
+                        <div class="variables-list">
+                          <div class="variable-item">
+                            <code>{{username}}</code>
+                            <span>用户名/邮箱</span>
+                          </div>
+                          <div class="variable-item">
+                            <code>{{resetLink}}</code>
+                            <span>重置密码链接</span>
+                          </div>
+                          <div class="variable-item">
+                            <code>{{expireTime}}</code>
+                            <span>链接过期时间</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div id="reset-password-mail-template-tip" class="template-tip success" style="display:none;">
+                        <i class="fa fa-check-circle"></i>
+                        保存成功！
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <% } %>
         </main>
     </div>
     <!-- 项目编辑/创建模态框 -->
@@ -346,7 +603,7 @@
                 </div>
                 <div class="form-group">
                     <label for="project-description"><i class="fa fa-info-circle"></i></label>
-                    <textarea id="project-description" class="styled-input" placeholder="项目描述"></textarea>
+                    <textarea id="project-description" class="styled-textarea" placeholder="项目描述"></textarea>
                 </div>
                 <div class="form-group">
                     <label for="project-url"><i class="fa fa-link"></i></label>
@@ -408,15 +665,15 @@
           <input type="text" name="username" autocomplete="username" style="display:none;">
           <div class="form-group">
             <label for="old-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="old-password" placeholder="当前密码" required autocomplete="current-password">
+            <input type="password" id="old-password" class="styled-input" placeholder="当前密码" required autocomplete="current-password">
             </div>
           <div class="form-group">
             <label for="new-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="new-password" placeholder="新密码" required autocomplete="new-password">
+            <input type="password" id="new-password" class="styled-input" placeholder="新密码" required autocomplete="new-password">
           </div>
           <div class="form-group">
             <label for="confirm-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="confirm-password" placeholder="确认新密码" required autocomplete="new-password">
+            <input type="password" id="confirm-password" class="styled-input" placeholder="确认新密码" required autocomplete="new-password">
           </div>
           <div id="change-password-error" class="form-error" style="display:none;"></div>
           <div class="actions">
@@ -471,12 +728,12 @@
           <!-- 基本信息 -->
           <div class="form-group">
             <label for="edit-user-email"><i class="fa fa-envelope"></i></label>
-            <input type="email" id="edit-user-email" placeholder="邮箱地址" readonly autocomplete="email">
+            <input type="email" id="edit-user-email" class="styled-input" placeholder="邮箱地址" readonly autocomplete="email">
           </div>
           
           <div class="form-group">
             <label for="edit-user-name"><i class="fa fa-user"></i></label>
-            <input type="text" id="edit-user-name" placeholder="用户姓名" autocomplete="name">
+            <input type="text" id="edit-user-name" class="styled-input" placeholder="用户姓名" autocomplete="name">
           </div>
           
           <!-- 功能按钮组 -->
@@ -513,16 +770,16 @@
         <div class="modal-title">发送消息</div>
         <form id="send-message-form">
           <div class="form-group">
-            <label>接收人</label>
+
             <div id="message-to-user-multiselect" class="multi-select-container styled-input" tabindex="0"></div>
             <input type="hidden" name="toUserIds" id="message-to-user-hidden" />
           </div>
           <div class="form-group">
-            <label>标题</label>
+
             <input type="text" name="title" required maxlength="50" placeholder="请输入消息标题" autocomplete="off" class="styled-input" />
           </div>
           <div class="form-group">
-            <label>内容</label>
+
             <textarea name="content" required maxlength="200" placeholder="请输入消息内容" autocomplete="off" rows="4" class="styled-input"></textarea>
           </div>
           <div class="actions">
@@ -570,1733 +827,10 @@
         </form>
       </div>
     </div>
+    <script src="/js/message.js"></script>
+    <script src="/js/change-password.js"></script>
+    <script src="/js/logout.js"></script>
+    <script src="/js/admin.js"></script>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const token = localStorage.getItem('jwt_token');
-        if (!token) {
-            window.location.href = '/login';
-            return;
-        }
-
-        const authHeader = { 'Authorization': `Bearer ${token}` };
-
-        let allUsers = [];
-        let allProjects = [];
-        let allProjectsForLogs = [];
-        
-        // 分页状态
-        let userPagination = { currentPage: 1, pageSize: 20, total: 0, filteredUsers: [] };
-        let projectPagination = { currentPage: 1, pageSize: 20, total: 0 };
-        let adminLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
-        let loginLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
-        let accessLogPagination = { currentPage: 1, pageSize: 20, total: 0 };
-
-        const usersTableBody = document.querySelector('#users-table tbody');
-        const projectsTableBody = document.querySelector('#projects-table tbody');
-        const projectModal = document.getElementById('project-modal');
-        const projectForm = document.getElementById('project-form');
-        const permissionsModal = document.getElementById('permissions-modal');
-        const adminLogTableBody = document.querySelector('#admin-log-table tbody');
-
-        // 显示当前登录管理员姓名或邮箱
-        try {
-            const me = await fetch('/api/users/me', { headers: authHeader });
-            if (me.ok) {
-                const user = await me.json();
-                document.getElementById('user-info').innerText = user.name || user.email;
-            } else {
-                document.getElementById('user-info').innerText = '';
-            }
-        } catch (e) {
-            document.getElementById('user-info').innerText = '';
-        }
-
-        // API请求函数
-        const apiFetch = async (url, options = {}) => {
-            const response = await fetch(url, {
-                headers: { ...authHeader, 'Content-Type': 'application/json' },
-                ...options
-            });
-            if (response.status === 401 || response.status === 403) {
-                 localStorage.removeItem('jwt_token');
-                 window.location.href = '/login';
-                 throw new Error('认证失败');
-            }
-            if (!response.ok && response.status !== 204) {
-                 const err = await response.json();
-                 throw new Error(err.message || '请求失败');
-            }
-            return response.status === 204 ? null : response.json();
-        };
-
-        // 渲染函数
-        const renderUsers = async () => {
-            // 搜索过滤
-            const searchTerm = document.getElementById('user-search').value.toLowerCase();
-            userPagination.filteredUsers = allUsers.filter(user => 
-                user.email.toLowerCase().includes(searchTerm) || 
-                (user.name && user.name.toLowerCase().includes(searchTerm))
-            );
-            
-            // 分页计算
-            const startIndex = (userPagination.currentPage - 1) * userPagination.pageSize;
-            const endIndex = startIndex + userPagination.pageSize;
-            const paginatedUsers = userPagination.filteredUsers.slice(startIndex, endIndex);
-            
-            // 更新分页信息
-            userPagination.total = userPagination.filteredUsers.length;
-            document.getElementById('user-start').textContent = startIndex + 1;
-            document.getElementById('user-end').textContent = Math.min(endIndex, userPagination.total);
-            document.getElementById('user-total').textContent = userPagination.total;
-            
-            // 渲染表格
-            usersTableBody.innerHTML = '';
-            for (const user of paginatedUsers) {
-                // 获取用户项目数量
-                let projectCount = 0;
-                try {
-                    const userProjects = await apiFetch(`/api/users/${user.id}/projects`);
-                    projectCount = userProjects.length;
-                } catch (e) {
-                    projectCount = 0;
-                }
-                const isSuperAdmin = user.isSuperAdmin;
-                const statusHtml = user.isActive
-                  ? '<span style="color: #059669; font-weight: 500;">正常</span>'
-                  : '<span style="color: #dc2626; font-weight: 500;">已禁用</span>';
-                const row = `
-                    <tr>
-                        <td>${user.id}</td>
-                        <td>${user.email}</td>
-                        <td>${user.name || ''}</td>
-                        <td>${user.role}</td>
-                        <td>${statusHtml}</td>
-                        <td><span style="color: ${projectCount > 0 ? '#059669' : '#6b7280'}; font-weight: 500;">${projectCount} 个项目</span></td>
-                        <td>${new Date(user.createdAt).toLocaleString()}</td>
-                        <td class="actions">
-                            <button class="btn btn-primary" onclick="editUser(${user.id})">
-                                <i class="fa fa-edit" style="margin-right: 0.3em;"></i>编辑
-                            </button>
-                            <button class="btn btn-secondary" onclick="managePermissions(${user.id})" style="${user.role === 'admin' ? 'background: #dbeafe; color: #1d4ed8; font-weight: 600;' : ''}">
-                                <i class="fa fa-key" style="margin-right: 0.3em;"></i>管理权限
-                            </button>
-                        </td>
-                    </tr>`;
-                usersTableBody.innerHTML += row;
-            }
-            
-            // 更新分页控件
-            updateUserPagination();
-        };
-
-        const renderProjects = () => {
-            // 分页计算
-            const startIndex = (projectPagination.currentPage - 1) * projectPagination.pageSize;
-            const endIndex = startIndex + projectPagination.pageSize;
-            const paginatedProjects = allProjects.slice(startIndex, endIndex);
-            
-            // 更新分页信息
-            projectPagination.total = allProjects.length;
-            document.getElementById('project-start').textContent = startIndex + 1;
-            document.getElementById('project-end').textContent = Math.min(endIndex, projectPagination.total);
-            document.getElementById('project-total').textContent = projectPagination.total;
-            
-            projectsTableBody.innerHTML = '';
-            paginatedProjects.forEach(project => {
-                const row = `
-                    <tr>
-                        <td>${project.id}</td>
-                        <td>${project.name}</td>
-                        <td>${project.description || ''}</td>
-                        <td>${project.url || ''}</td>
-                        <td class="actions">
-                            <button class="btn btn-secondary" onclick="editProject(${project.id})">编辑</button>
-                            <button class="btn btn-danger" onclick="deleteProject(${project.id})">删除</button>
-                        </td>
-                    </tr>`;
-                projectsTableBody.innerHTML += row;
-            });
-            
-            // 更新分页控件
-            updateProjectPagination();
-        };
-        
-        // 分页控件更新函数
-        function updateUserPagination() {
-            const totalPages = Math.ceil(userPagination.total / userPagination.pageSize);
-            const pageNumbers = document.getElementById('user-page-numbers');
-            const prevBtn = document.getElementById('user-prev');
-            const nextBtn = document.getElementById('user-next');
-            
-            // 更新按钮状态
-            prevBtn.disabled = userPagination.currentPage <= 1;
-            nextBtn.disabled = userPagination.currentPage >= totalPages;
-            
-            // 生成页码按钮
-            pageNumbers.innerHTML = '';
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, userPagination.currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `btn ${i === userPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-                pageBtn.style.padding = '0.5rem 0.8rem';
-                pageBtn.style.fontSize = '0.9rem';
-                pageBtn.textContent = i;
-                pageBtn.onclick = () => {
-                    userPagination.currentPage = i;
-                    renderUsers();
-                };
-                pageNumbers.appendChild(pageBtn);
-            }
-        }
-        
-        function updateProjectPagination() {
-            const totalPages = Math.ceil(projectPagination.total / projectPagination.pageSize);
-            const pageNumbers = document.getElementById('project-page-numbers');
-            const prevBtn = document.getElementById('project-prev');
-            const nextBtn = document.getElementById('project-next');
-            
-            prevBtn.disabled = projectPagination.currentPage <= 1;
-            nextBtn.disabled = projectPagination.currentPage >= totalPages;
-            
-            pageNumbers.innerHTML = '';
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, projectPagination.currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `btn ${i === projectPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-                pageBtn.style.padding = '0.5rem 0.8rem';
-                pageBtn.style.fontSize = '0.9rem';
-                pageBtn.textContent = i;
-                pageBtn.onclick = () => {
-                    projectPagination.currentPage = i;
-                    renderProjects();
-                };
-                pageNumbers.appendChild(pageBtn);
-            }
-        }
-        
-        // 加载初始数据
-        const loadInitialData = async () => {
-            try {
-                const [users, projects] = await Promise.all([
-                    apiFetch('/api/users'),
-                    apiFetch('/api/projects')
-                ]);
-                allUsers = users;
-                allProjects = projects;
-                renderUsers();
-                renderProjects();
-            } catch (error) {
-                alert(`加载数据失败: ${error.message}`);
-            }
-        };
-
-        // --- 项目管理 ---
-        window.editProject = (id) => {
-            const project = allProjects.find(p => p.id === id);
-            document.getElementById('project-modal-title').innerText = '编辑项目';
-            document.getElementById('project-id').value = project.id;
-            document.getElementById('project-name').value = project.name;
-            document.getElementById('project-description').value = project.description || '';
-            document.getElementById('project-url').value = project.url || '';
-            projectModal.style.display = 'flex';
-        };
-
-        document.getElementById('add-project-btn').addEventListener('click', () => {
-            document.getElementById('project-modal-title').innerText = '添加项目';
-            projectForm.reset();
-            document.getElementById('project-id').value = '';
-            projectModal.style.display = 'flex';
-        });
-        
-        document.getElementById('cancel-project-modal').addEventListener('click', () => {
-             projectModal.style.display = 'none';
-        });
-
-        projectForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('project-id').value;
-            const data = {
-                name: document.getElementById('project-name').value,
-                description: document.getElementById('project-description').value,
-                url: document.getElementById('project-url').value,
-            };
-
-            try {
-                if (id) { // 更新
-                    await apiFetch(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
-                } else { // 创建
-                    await apiFetch('/api/projects', { method: 'POST', body: JSON.stringify(data) });
-                }
-                projectModal.style.display = 'none';
-                projectPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (error) {
-                alert(`操作失败: ${error.message}`);
-            }
-        });
-
-        window.deleteProject = async (id) => {
-            if (!confirm('确定要删除这个项目吗？')) return;
-            try {
-                await apiFetch(`/api/projects/${id}`, { method: 'DELETE' });
-                projectPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (error) {
-                alert(`删除失败: ${error.message}`);
-            }
-        };
-
-        // --- 权限管理 ---
-        let currentUserId = null;
-        let currentUserProjects = [];
-        let pendingPermissions = new Set();
-        
-        window.managePermissions = async (userId) => {
-            currentUserId = userId;
-            const user = allUsers.find(u => u.id === userId);
-            const isAdminUser = user.role === 'admin' || user.isSuperAdmin;
-            
-            document.getElementById('permissions-modal-title').innerText = `为 ${user.name || user.email} 分配项目权限`;
-            document.getElementById('permissions-modal-subtitle').innerText = isAdminUser 
-                ? `管理管理员用户的项目访问权限` 
-                : `管理用户的项目访问权限`;
-            
-            // 获取该用户已有的权限
-            try {
-                currentUserProjects = await apiFetch(`/api/users/${userId}/projects`);
-                pendingPermissions = new Set(currentUserProjects.map(p => p.id));
-            } catch (e) {
-                alert('获取用户已有权限失败: ' + e.message);
-                currentUserProjects = [];
-                pendingPermissions = new Set();
-            }
-            
-            renderPermissionsList();
-            updatePermissionsStats();
-            permissionsModal.style.display = 'flex';
-        };
-        
-        function renderPermissionsList() {
-            let contentHtml = '';
-            allProjects.forEach(project => {
-                const checked = pendingPermissions.has(project.id) ? 'checked' : '';
-                contentHtml += `
-                    <div class="permission-item" data-project-name="${project.name.toLowerCase()}">
-                        <input type="checkbox" id="proj-${project.id}" onchange="togglePermission(${project.id}, this.checked)" ${checked}>
-                        <label for="proj-${project.id}">
-                            <strong>${project.name}</strong>
-                            ${project.description ? `<br><small style="color: #6b7280;">${project.description}</small>` : ''}
-                        </label>
-                    </div>
-                `;
-            });
-            document.getElementById('permissions-content').innerHTML = contentHtml;
-        }
-        
-        function updatePermissionsStats() {
-            document.getElementById('assigned-count').innerText = pendingPermissions.size;
-            document.getElementById('total-count').innerText = allProjects.length;
-        }
-        
-        window.togglePermission = (projectId, assigned) => {
-            if (assigned) {
-                pendingPermissions.add(projectId);
-            } else {
-                pendingPermissions.delete(projectId);
-            }
-            updatePermissionsStats();
-        };
-        
-        window.selectAllPermissions = () => {
-            allProjects.forEach(project => {
-                pendingPermissions.add(project.id);
-                const checkbox = document.getElementById(`proj-${project.id}`);
-                if (checkbox) checkbox.checked = true;
-            });
-            updatePermissionsStats();
-        };
-        
-        window.clearAllPermissions = () => {
-            pendingPermissions.clear();
-            allProjects.forEach(project => {
-                const checkbox = document.getElementById(`proj-${project.id}`);
-                if (checkbox) checkbox.checked = false;
-            });
-            updatePermissionsStats();
-        };
-        
-        window.filterPermissions = () => {
-            const searchTerm = document.getElementById('permission-search').value.toLowerCase();
-            const items = document.querySelectorAll('.permission-item');
-            
-            items.forEach(item => {
-                const projectName = item.getAttribute('data-project-name');
-                if (projectName.includes(searchTerm)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        };
-        
-        document.getElementById('save-permissions-btn').addEventListener('click', async () => {
-            if (!currentUserId) return;
-            
-            try {
-                // 计算需要添加和删除的权限
-                const currentProjectIds = new Set(currentUserProjects.map(p => p.id));
-                const newProjectIds = pendingPermissions;
-                
-                const toAdd = Array.from(newProjectIds).filter(id => !currentProjectIds.has(id));
-                const toRemove = Array.from(currentProjectIds).filter(id => !newProjectIds.has(id));
-                
-                // 批量处理权限变更
-                const promises = [];
-                
-                // 添加新权限
-                for (const projectId of toAdd) {
-                    promises.push(
-                        apiFetch('/api/projects/assign', {
-                    method: 'POST',
-                            body: JSON.stringify({ userId: currentUserId, projectId })
-                        })
-                    );
-                }
-                
-                // 删除旧权限
-                for (const projectId of toRemove) {
-                    promises.push(
-                        apiFetch('/api/projects/revoke', {
-                            method: 'POST',
-                            body: JSON.stringify({ userId: currentUserId, projectId })
-                        })
-                    );
-                }
-                
-                await Promise.all(promises);
-                
-                alert(`权限更新成功！添加了 ${toAdd.length} 个权限，删除了 ${toRemove.length} 个权限。`);
-                permissionsModal.style.display = 'none';
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 重新加载数据以更新权限状态
-                
-            } catch (error) {
-                 alert(`权限操作失败: ${error.message}`);
-            }
-        });
-        
-        document.getElementById('cancel-permissions-modal').addEventListener('click', () => {
-            permissionsModal.style.display = 'none';
-            currentUserId = null;
-            currentUserProjects = [];
-            pendingPermissions.clear();
-        });
-
-        window.resetPasswordModal = (userId) => {
-            const user = allUsers.find(u => u.id === userId);
-            document.getElementById('reset-password-modal-title').innerText = `重置 ${user.name || user.email} 的密码`;
-            document.getElementById('reset-password-modal-subtitle').innerText = `为用户设置新的登录密码`;
-            document.getElementById('reset-user-id').value = userId;
-            document.getElementById('reset-password-form').reset();
-            document.getElementById('reset-password-error').style.display = 'none';
-            document.getElementById('reset-password-modal').style.display = 'flex';
-            document.getElementById('reset-new-password').focus();
-        };
-
-        // 重置密码弹窗事件处理
-        document.getElementById('cancel-reset-password-modal').addEventListener('click', () => {
-            document.getElementById('reset-password-modal').style.display = 'none';
-            document.getElementById('reset-password-form').reset();
-            document.getElementById('reset-password-error').style.display = 'none';
-        });
-
-        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const userId = document.getElementById('reset-user-id').value;
-            const newPassword = document.getElementById('reset-new-password').value.trim();
-            const confirmPassword = document.getElementById('reset-confirm-password').value.trim();
-            const errorDiv = document.getElementById('reset-password-error');
-
-            // 表单验证
-            if (newPassword.length < 6) {
-                errorDiv.textContent = '新密码不能少于6位';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                errorDiv.textContent = '两次输入的新密码不一致';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                await apiFetch(`/api/users/${userId}/reset-password`, {
-                    method: 'POST',
-                    body: JSON.stringify({ newPassword })
-                });
-                
-                // 成功提示
-                alert('密码重置成功！');
-                document.getElementById('reset-password-modal').style.display = 'none';
-                document.getElementById('reset-password-form').reset();
-                errorDiv.style.display = 'none';
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 刷新用户列表
-                
-            } catch (error) {
-                errorDiv.textContent = `重置密码失败: ${error.message}`;
-                errorDiv.style.display = 'block';
-            }
-        });
-
-        window.deactivateUser = async (userId) => {
-            if (!confirm('确定要禁用该用户吗？')) return;
-            try {
-                await apiFetch(`/api/users/${userId}/deactivate`, { method: 'PATCH' });
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (e) {
-                alert('禁用失败: ' + e.message);
-            }
-        };
-
-        window.activateUser = async (userId) => {
-            try {
-                await apiFetch(`/api/users/${userId}/activate`, { method: 'PATCH' });
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (e) {
-                alert('启用失败: ' + e.message);
-            }
-        };
-
-        window.setAdmin = async (userId) => {
-            try {
-                await apiFetch(`/api/users/${userId}/set-admin`, { method: 'PATCH' });
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (e) {
-                alert('设为管理员失败: ' + e.message);
-            }
-        };
-
-        window.unsetAdmin = async (userId) => {
-            try {
-                await apiFetch(`/api/users/${userId}/unset-admin`, { method: 'PATCH' });
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData();
-            } catch (e) {
-                alert('取消管理员失败: ' + e.message);
-            }
-        };
-
-        // --- 用户编辑功能 ---
-        let currentEditUser = null;
-        
-        window.editUser = (userId) => {
-            currentEditUser = allUsers.find(u => u.id === userId);
-            if (!currentEditUser) return;
-            
-            // 填充表单数据
-            document.getElementById('edit-user-id').value = currentEditUser.id;
-            document.getElementById('edit-user-email').value = currentEditUser.email;
-            document.getElementById('edit-user-name').value = currentEditUser.name || '';
-            
-            // 更新弹窗标题
-            document.getElementById('user-edit-modal-title').innerText = `编辑用户 - ${currentEditUser.name || currentEditUser.email}`;
-            
-            // 更新按钮状态
-            updateEditButtons();
-            
-            // 显示弹窗
-            document.getElementById('user-edit-modal').style.display = 'flex';
-            document.getElementById('user-edit-error').style.display = 'none';
-        };
-        
-        function updateEditButtons() {
-            if (!currentEditUser) return;
-            
-            const isSuperAdmin = currentEditUser.isSuperAdmin;
-            const statusBtn = document.getElementById('edit-toggle-status-btn');
-            const adminBtn = document.getElementById('edit-toggle-admin-btn');
-            const resetBtn = document.getElementById('edit-reset-password-btn');
-            
-            // 重置密码按钮
-            if (isSuperAdmin) {
-                resetBtn.disabled = true;
-                resetBtn.style.opacity = '0.5';
-                resetBtn.innerHTML = '<i class="fa fa-key" style="margin-right: 0.5rem;"></i>主管理员不可重置';
-            } else {
-                resetBtn.disabled = false;
-                resetBtn.style.opacity = '1';
-                resetBtn.innerHTML = '<i class="fa fa-key" style="margin-right: 0.5rem;"></i>重置密码';
-            }
-            
-            // 状态切换按钮
-            if (isSuperAdmin) {
-                statusBtn.disabled = true;
-                statusBtn.style.opacity = '0.5';
-                document.getElementById('edit-status-text').innerText = '主管理员不可禁用';
-            } else {
-                statusBtn.disabled = false;
-                statusBtn.style.opacity = '1';
-                document.getElementById('edit-status-text').innerText = currentEditUser.isActive ? '禁用用户' : '启用用户';
-            }
-            
-            // 管理员切换按钮
-            if (isSuperAdmin) {
-                adminBtn.disabled = true;
-                adminBtn.style.opacity = '0.5';
-                document.getElementById('edit-admin-text').innerText = '主管理员';
-            } else {
-                adminBtn.disabled = false;
-                adminBtn.style.opacity = '1';
-                document.getElementById('edit-admin-text').innerText = currentEditUser.role === 'admin' ? '取消管理员' : '设为管理员';
-            }
-        }
-        
-        // 用户编辑弹窗事件绑定
-        document.getElementById('cancel-user-edit-modal').onclick = function() {
-            document.getElementById('user-edit-modal').style.display = 'none';
-            currentEditUser = null;
-        };
-        
-        // 重置密码按钮
-        document.getElementById('edit-reset-password-btn').onclick = function() {
-            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
-            resetPasswordModal(currentEditUser.id);
-        };
-        
-        // 状态切换按钮
-        document.getElementById('edit-toggle-status-btn').onclick = async function() {
-            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
-            
-            try {
-                if (currentEditUser.isActive) {
-                    await apiFetch(`/api/users/${currentEditUser.id}/deactivate`, { method: 'PATCH' });
-                    currentEditUser.isActive = false;
-                } else {
-                    await apiFetch(`/api/users/${currentEditUser.id}/activate`, { method: 'PATCH' });
-                    currentEditUser.isActive = true;
-                }
-                updateEditButtons();
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 刷新用户列表
-            } catch (e) {
-                alert('操作失败: ' + e.message);
-            }
-        };
-        
-        // 管理员切换按钮
-        document.getElementById('edit-toggle-admin-btn').onclick = async function() {
-            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
-            
-            try {
-                if (currentEditUser.role === 'admin') {
-                    await apiFetch(`/api/users/${currentEditUser.id}/unset-admin`, { method: 'PATCH' });
-                    currentEditUser.role = 'user';
-                } else {
-                    await apiFetch(`/api/users/${currentEditUser.id}/set-admin`, { method: 'PATCH' });
-                    currentEditUser.role = 'admin';
-                }
-                updateEditButtons();
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 刷新用户列表
-            } catch (e) {
-                alert('操作失败: ' + e.message);
-            }
-        };
-        
-        // 保存用户信息
-        document.getElementById('user-edit-form').onsubmit = async function(e) {
-            e.preventDefault();
-            if (!currentEditUser) return;
-            
-            const newName = document.getElementById('edit-user-name').value.trim();
-            const errorDiv = document.getElementById('user-edit-error');
-            
-            try {
-                await apiFetch(`/api/users/${currentEditUser.id}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ name: newName })
-                });
-                
-                alert('用户信息更新成功！');
-                document.getElementById('user-edit-modal').style.display = 'none';
-                currentEditUser = null;
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 刷新用户列表
-                
-            } catch (error) {
-                errorDiv.textContent = `更新失败: ${error.message}`;
-                errorDiv.style.display = 'block';
-            }
-        };
-
-        // Tab 按钮
-        const tabDashboard = document.getElementById('tab-dashboard');
-        const tabUsers = document.getElementById('tab-users');
-        const tabProjects = document.getElementById('tab-projects');
-        const tabLogs = document.getElementById('tab-logs');
-        const tabLoginLogs = document.getElementById('tab-login-logs');
-        const tabAccessLogs = document.getElementById('tab-access-logs');
-        // section区块
-        const dashboardSection = document.getElementById('dashboard-section');
-        const userSection = document.getElementById('user-management');
-        const projectSection = document.getElementById('project-management');
-        const adminLogSection = document.getElementById('admin-log-section');
-        const loginLogSection = document.getElementById('login-log-section');
-        const accessLogSection = document.getElementById('access-log-section');
-        // tab与section映射
-        const tabMap = [
-            {tab: tabDashboard, section: dashboardSection, title: 'Dashboard', async: false},
-            {tab: tabUsers, section: userSection, title: '用户管理', async: false},
-            {tab: tabProjects, section: projectSection, title: '项目管理', async: false},
-            {tab: tabLogs, section: adminLogSection, title: '操作日志', async: false},
-            {tab: tabLoginLogs, section: loginLogSection, title: '登录日志', async: true},
-            {tab: tabAccessLogs, section: accessLogSection, title: '访问日志', async: true},
-        ];
-        // 统一tab切换函数
-        function switchTab(idx) {
-            tabMap.forEach((item, i) => {
-                if (item.tab) item.tab.classList.remove('nav-item-active');
-                if (item.section) item.section.style.display = 'none';
-            });
-            if (tabMap[idx].tab) tabMap[idx].tab.classList.add('nav-item-active');
-            if (tabMap[idx].section) tabMap[idx].section.style.display = 'block';
-            document.getElementById('pageTitle').innerText = tabMap[idx].title;
-            // 日志tab切换时加载数据
-            if (tabMap[idx].async && idx === 4) {
-                loadUsersForLogs().then(renderLoginLogs);
-            } else if (tabMap[idx].async && idx === 5) {
-                loadUsersForLogs().then(renderAccessLogs);
-            } else if (idx === 3) { // 操作日志
-                renderAdminLogs();
-            }
-        }
-        // 绑定事件
-        tabMap.forEach((item, idx) => {
-            if (item.tab) {
-                item.tab.onclick = (e) => {
-                    e.preventDefault(); // 阻止a标签默认跳转
-                    // Dashboard特殊处理：刷新数据
-                    if (idx === 0) {
-                        loadDashboardStats();
-                    }
-                    switchTab(idx);
-                };
-            }
-        });
-        // 默认显示Dashboard
-        switchTab(0);
-        // 登录日志和访问日志渲染
-        const loginLogUserSelect = document.getElementById('login-log-user-select');
-        const accessLogUserSelect = document.getElementById('access-log-user-select');
-        const loginLogTableBody = document.querySelector('#login-log-table tbody');
-        const accessLogTableBody = document.querySelector('#access-log-table tbody');
-        let allUsersForLogs = [];
-        // 加载用户和项目下拉
-        async function loadUsersForLogs() {
-            allUsersForLogs = await apiFetch('/api/users');
-            allProjectsForLogs = await apiFetch('/api/projects');
-            [loginLogUserSelect, accessLogUserSelect].forEach(select => {
-                select.innerHTML = '<option value="">全部</option>' + allUsersForLogs.map(u => `<option value="${u.id}">${u.name || u.email}</option>`).join('');
-            });
-        }
-        // 渲染登录日志
-        async function renderLoginLogs() {
-            const userId = loginLogUserSelect.value;
-            const url = userId ? `/api/users/admin/user-login-logs?userId=${userId}` : '/api/users/admin/user-login-logs';
-            const logs = await apiFetch(url);
-            
-            // 分页计算
-            const startIndex = (loginLogPagination.currentPage - 1) * loginLogPagination.pageSize;
-            const endIndex = startIndex + loginLogPagination.pageSize;
-            const paginatedLogs = logs.slice(startIndex, endIndex);
-            
-            // 更新分页信息
-            loginLogPagination.total = logs.length;
-            document.getElementById('login-log-start').textContent = startIndex + 1;
-            document.getElementById('login-log-end').textContent = Math.min(endIndex, loginLogPagination.total);
-            document.getElementById('login-log-total').textContent = loginLogPagination.total;
-            
-            loginLogTableBody.innerHTML = paginatedLogs.map(log => {
-                const user = allUsersForLogs.find(u => u.id === log.userId);
-                return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${log.city || ''}</td><td>${log.ip || ''}</td></tr>`;
-            }).join('');
-            
-            // 更新分页控件
-            updateLoginLogPagination();
-        }
-        // 渲染访问日志
-        async function renderAccessLogs() {
-            const userId = accessLogUserSelect.value;
-            const url = userId ? `/api/users/admin/user-project-access-logs?userId=${userId}` : '/api/users/admin/user-project-access-logs';
-            const logs = await apiFetch(url);
-            const filteredLogs = logs.filter(log => log.projectId !== 0);
-            
-            // 分页计算
-            const startIndex = (accessLogPagination.currentPage - 1) * accessLogPagination.pageSize;
-            const endIndex = startIndex + accessLogPagination.pageSize;
-            const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
-            
-            // 更新分页信息
-            accessLogPagination.total = filteredLogs.length;
-            document.getElementById('access-log-start').textContent = startIndex + 1;
-            document.getElementById('access-log-end').textContent = Math.min(endIndex, accessLogPagination.total);
-            document.getElementById('access-log-total').textContent = accessLogPagination.total;
-            
-            accessLogTableBody.innerHTML = paginatedLogs.map(log => {
-                    const user = allUsersForLogs.find(u => u.id === log.userId);
-                    return `<tr><td>${user ? (user.name || user.email) : log.userId}</td><td>${new Date(log.createdAt).toLocaleString()}</td><td>${log.projectName || log.projectId}</td><td>${log.ip || ''}</td><td>${log.city || ''}</td></tr>`;
-                }).join('');
-            
-            // 更新分页控件
-            updateAccessLogPagination();
-        }
-        // 下拉和Tab事件绑定
-        loginLogUserSelect.onchange = () => {
-            loginLogPagination.currentPage = 1; // 重置到第一页
-            renderLoginLogs();
-        };
-        accessLogUserSelect.onchange = () => {
-            accessLogPagination.currentPage = 1; // 重置到第一页
-            renderAccessLogs();
-        };
-        
-        // 日志分页控件更新函数
-        function updateLoginLogPagination() {
-            const totalPages = Math.ceil(loginLogPagination.total / loginLogPagination.pageSize);
-            const pageNumbers = document.getElementById('login-log-page-numbers');
-            const prevBtn = document.getElementById('login-log-prev');
-            const nextBtn = document.getElementById('login-log-next');
-            
-            prevBtn.disabled = loginLogPagination.currentPage <= 1;
-            nextBtn.disabled = loginLogPagination.currentPage >= totalPages;
-            
-            pageNumbers.innerHTML = '';
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, loginLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `btn ${i === loginLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-                pageBtn.style.padding = '0.5rem 0.8rem';
-                pageBtn.style.fontSize = '0.9rem';
-                pageBtn.textContent = i;
-                pageBtn.onclick = () => {
-                    loginLogPagination.currentPage = i;
-                    renderLoginLogs();
-                };
-                pageNumbers.appendChild(pageBtn);
-            }
-        }
-        
-        function updateAccessLogPagination() {
-            const totalPages = Math.ceil(accessLogPagination.total / accessLogPagination.pageSize);
-            const pageNumbers = document.getElementById('access-log-page-numbers');
-            const prevBtn = document.getElementById('access-log-prev');
-            const nextBtn = document.getElementById('access-log-next');
-            
-            prevBtn.disabled = accessLogPagination.currentPage <= 1;
-            nextBtn.disabled = accessLogPagination.currentPage >= totalPages;
-            
-            pageNumbers.innerHTML = '';
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, accessLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `btn ${i === accessLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-                pageBtn.style.padding = '0.5rem 0.8rem';
-                pageBtn.style.fontSize = '0.9rem';
-                pageBtn.textContent = i;
-                pageBtn.onclick = () => {
-                    accessLogPagination.currentPage = i;
-                    renderAccessLogs();
-                };
-                pageNumbers.appendChild(pageBtn);
-            }
-        }
-        
-        // 日志分页事件绑定
-        document.getElementById('login-log-page-size').addEventListener('change', (e) => {
-            loginLogPagination.pageSize = parseInt(e.target.value);
-            loginLogPagination.currentPage = 1;
-            renderLoginLogs();
-        });
-        
-        document.getElementById('login-log-prev').addEventListener('click', () => {
-            if (loginLogPagination.currentPage > 1) {
-                loginLogPagination.currentPage--;
-                renderLoginLogs();
-            }
-        });
-        
-        document.getElementById('login-log-next').addEventListener('click', () => {
-            const totalPages = Math.ceil(loginLogPagination.total / loginLogPagination.pageSize);
-            if (loginLogPagination.currentPage < totalPages) {
-                loginLogPagination.currentPage++;
-                renderLoginLogs();
-            }
-        });
-        
-        document.getElementById('access-log-page-size').addEventListener('change', (e) => {
-            accessLogPagination.pageSize = parseInt(e.target.value);
-            accessLogPagination.currentPage = 1;
-            renderAccessLogs();
-        });
-        
-        document.getElementById('access-log-prev').addEventListener('click', () => {
-            if (accessLogPagination.currentPage > 1) {
-                accessLogPagination.currentPage--;
-                renderAccessLogs();
-            }
-        });
-        
-        document.getElementById('access-log-next').addEventListener('click', () => {
-            const totalPages = Math.ceil(accessLogPagination.total / accessLogPagination.pageSize);
-            if (accessLogPagination.currentPage < totalPages) {
-                accessLogPagination.currentPage++;
-                renderAccessLogs();
-            }
-        });
-
-        // Dashboard数据渲染
-        async function loadDashboardStats() {
-            const stats = await apiFetch('/api/users/admin/dashboard-stats');
-            document.getElementById('stat-user-count').innerText = stats.userCount;
-            document.getElementById('stat-project-count').innerText = stats.projectCount;
-            // 项目访问次数
-            const projectMap = {};
-            stats.projects.forEach(p => { projectMap[p.id] = p.name; });
-            const projectAccessTbody = document.querySelector('#dashboard-project-access-table tbody');
-            projectAccessTbody.innerHTML = stats.projectAccess
-                .filter(pa => pa.projectId !== 0)
-                .map(pa => `<tr><td>${projectMap[pa.projectId] || pa.projectId}</td><td>${pa._count.projectId}</td></tr>`).join('');
-            // 用户登录次数
-            const userMap = {};
-            stats.users.forEach(u => { userMap[u.id] = u.name || u.email; });
-            const userLoginTbody = document.querySelector('#dashboard-user-login-table tbody');
-            userLoginTbody.innerHTML = stats.userLogin.map(ul => `<tr><td>${userMap[ul.userId] || ul.userId}</td><td>${ul._count.userId}</td></tr>`).join('');
-            // 城市登录次数
-            const cityLoginTbody = document.querySelector('#dashboard-city-login-table tbody');
-            cityLoginTbody.innerHTML = stats.cityLogin
-                .filter(cl => cl.city && cl.city !== '')
-                .map(cl => `<tr><td>${cl.city}</td><td>${cl._count.city}</td></tr>`).join('');
-        }
-
-        // 渲染操作日志
-        async function renderAdminLogs() {
-            const logs = await apiFetch('/api/users/admin-logs');
-            
-            // 分页计算
-            const startIndex = (adminLogPagination.currentPage - 1) * adminLogPagination.pageSize;
-            const endIndex = startIndex + adminLogPagination.pageSize;
-            const paginatedLogs = logs.slice(startIndex, endIndex);
-            
-            // 更新分页信息
-            adminLogPagination.total = logs.length;
-            document.getElementById('admin-log-start').textContent = startIndex + 1;
-            document.getElementById('admin-log-end').textContent = Math.min(endIndex, adminLogPagination.total);
-            document.getElementById('admin-log-total').textContent = adminLogPagination.total;
-            
-            adminLogTableBody.innerHTML = paginatedLogs.map(log => `
-                <tr>
-                    <td>${new Date(log.createdAt).toLocaleString()}</td>
-                    <td>${log.adminName || log.adminId}</td>
-                    <td>${log.action}</td>
-                    <td>${log.objectType || ''}</td>
-                    <td>${log.objectName || log.objectId || ''}</td>
-                    <td>${log.details || ''}</td>
-                </tr>
-            `).join('');
-            
-            // 更新分页控件
-            updateAdminLogPagination();
-        }
-        
-        // 操作日志分页控件更新函数
-        function updateAdminLogPagination() {
-            const totalPages = Math.ceil(adminLogPagination.total / adminLogPagination.pageSize);
-            const pageNumbers = document.getElementById('admin-log-page-numbers');
-            const prevBtn = document.getElementById('admin-log-prev');
-            const nextBtn = document.getElementById('admin-log-next');
-            
-            prevBtn.disabled = adminLogPagination.currentPage <= 1;
-            nextBtn.disabled = adminLogPagination.currentPage >= totalPages;
-            
-            pageNumbers.innerHTML = '';
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, adminLogPagination.currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage + 1 < maxVisiblePages) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `btn ${i === adminLogPagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-                pageBtn.style.padding = '0.5rem 0.8rem';
-                pageBtn.style.fontSize = '0.9rem';
-                pageBtn.textContent = i;
-                pageBtn.onclick = () => {
-                    adminLogPagination.currentPage = i;
-                    renderAdminLogs();
-                };
-                pageNumbers.appendChild(pageBtn);
-            }
-        }
-        
-        // 操作日志分页事件绑定
-        document.getElementById('admin-log-page-size').addEventListener('change', (e) => {
-            adminLogPagination.pageSize = parseInt(e.target.value);
-            adminLogPagination.currentPage = 1;
-            renderAdminLogs();
-        });
-        
-        document.getElementById('admin-log-prev').addEventListener('click', () => {
-            if (adminLogPagination.currentPage > 1) {
-                adminLogPagination.currentPage--;
-                renderAdminLogs();
-            }
-        });
-        
-        document.getElementById('admin-log-next').addEventListener('click', () => {
-            const totalPages = Math.ceil(adminLogPagination.total / adminLogPagination.pageSize);
-            if (adminLogPagination.currentPage < totalPages) {
-                adminLogPagination.currentPage++;
-                renderAdminLogs();
-            }
-        });
-
-        // --- 初始化 ---
-        loadInitialData();
-        loadDashboardStats();
-        switchTab(0);
-
-        // 用户搜索和分页事件绑定
-        document.getElementById('user-search').addEventListener('input', () => {
-            userPagination.currentPage = 1; // 重置到第一页
-            renderUsers();
-        });
-        
-        document.getElementById('user-page-size').addEventListener('change', (e) => {
-            userPagination.pageSize = parseInt(e.target.value);
-            userPagination.currentPage = 1;
-            renderUsers();
-        });
-        
-        document.getElementById('user-prev').addEventListener('click', () => {
-            if (userPagination.currentPage > 1) {
-                userPagination.currentPage--;
-                renderUsers();
-            }
-        });
-        
-        document.getElementById('user-next').addEventListener('click', () => {
-            const totalPages = Math.ceil(userPagination.total / userPagination.pageSize);
-            if (userPagination.currentPage < totalPages) {
-                userPagination.currentPage++;
-                renderUsers();
-            }
-        });
-        
-        // 项目分页事件绑定
-        document.getElementById('project-page-size').addEventListener('change', (e) => {
-            projectPagination.pageSize = parseInt(e.target.value);
-            projectPagination.currentPage = 1;
-            renderProjects();
-        });
-        
-        document.getElementById('project-prev').addEventListener('click', () => {
-            if (projectPagination.currentPage > 1) {
-                projectPagination.currentPage--;
-                renderProjects();
-            }
-        });
-        
-        document.getElementById('project-next').addEventListener('click', () => {
-            const totalPages = Math.ceil(projectPagination.total / projectPagination.pageSize);
-            if (projectPagination.currentPage < totalPages) {
-                projectPagination.currentPage++;
-                renderProjects();
-            }
-        });
-
-        // 顶部栏下拉菜单逻辑
-        const dropdownToggle = document.getElementById('admin-dropdown').querySelector('.dropdown-toggle');
-        const dropdownMenu = document.getElementById('dropdown-menu');
-        const dropdown = document.getElementById('admin-dropdown');
-        
-        dropdownToggle.onclick = function(e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('active');
-            dropdownMenu.classList.toggle('show');
-        };
-        
-        document.body.addEventListener('click', function() {
-            dropdown.classList.remove('active');
-            dropdownMenu.classList.remove('show');
-        });
-        // "修改密码"点击事件
-        document.getElementById('change-password-btn').onclick = function() {
-            document.getElementById('change-password-modal').style.display = 'flex';
-            document.getElementById('old-password').focus();
-        };
-        // 关闭修改密码弹窗
-        document.getElementById('cancel-change-password-modal').onclick = function() {
-            document.getElementById('change-password-modal').style.display = 'none';
-            document.getElementById('change-password-form').reset();
-            document.getElementById('change-password-error').style.display = 'none';
-        };
-        // 提交修改密码
-        document.getElementById('change-password-form').onsubmit = async function(e) {
-            e.preventDefault();
-            const oldPassword = document.getElementById('old-password').value.trim();
-            const newPassword = document.getElementById('new-password').value.trim();
-            const confirmPassword = document.getElementById('confirm-password').value.trim();
-            const errorDiv = document.getElementById('change-password-error');
-            if (newPassword.length < 6) {
-                errorDiv.textContent = '新密码不能少于6位';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                errorDiv.textContent = '两次输入的新密码不一致';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            try {
-                const res = await fetch('/api/users/me/change-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` },
-                    body: JSON.stringify({ oldPassword, newPassword })
-                });
-                if (!res.ok) {
-                    const data = await res.json();
-                    errorDiv.textContent = data.message || '修改失败';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-                alert('密码修改成功，请重新登录');
-                localStorage.removeItem('jwt_token');
-                window.location.href = '/login';
-            } catch (err) {
-                errorDiv.textContent = '请求失败，请重试';
-                errorDiv.style.display = 'block';
-            }
-        };
-        // "退出登录"点击事件
-        document.getElementById('logout-btn').onclick = function() {
-            localStorage.removeItem('jwt_token');
-            window.location.href = '/login';
-        };
-
-        document.getElementById('edit-delete-user-btn').onclick = async function() {
-            if (!currentEditUser || currentEditUser.isSuperAdmin) return;
-            if (!confirm('确定要删除该用户吗？此操作不可恢复！')) return;
-            try {
-                await apiFetch(`/api/users/${currentEditUser.id}`, { method: 'DELETE' });
-                alert('用户已删除！');
-                document.getElementById('user-edit-modal').style.display = 'none';
-                currentEditUser = null;
-                userPagination.currentPage = 1; // 重置到第一页
-                loadInitialData(); // 刷新用户列表
-            } catch (e) {
-                alert('删除失败: ' + e.message);
-            }
-        };
-
-        // 发送消息弹窗逻辑
-        const sendMsgModal = document.getElementById('send-message-modal');
-        const sendMsgForm = document.getElementById('send-message-form');
-        const sendMsgCancel = document.getElementById('cancel-send-message');
-        const sendMsgTip = document.getElementById('send-message-tip');
-        const toUserSelect = document.getElementById('message-to-user');
-
-        sendMsgCancel.onclick = function() {
-          sendMsgModal.style.display = 'none';
-          sendMsgForm.reset();
-          sendMsgTip.style.display = 'none';
-        };
-        sendMsgForm.onsubmit = async function(e) {
-          e.preventDefault();
-          const form = new FormData(sendMsgForm);
-          let toUserIds = $('#message-to-user').val(); // 数组
-          if (toUserIds && toUserIds.includes('')) {
-            toUserIds = ['']; // 只选了全体用户
-          }
-          const data = {
-            title: form.get('title'),
-            content: form.get('content'),
-            toUserIds
-          };
-          const res = await apiFetch('/api/users/messages', {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (res.success) {
-            sendMsgTip.textContent = '发送成功！';
-            sendMsgTip.style.display = 'block';
-            setTimeout(() => {
-              sendMsgModal.style.display = 'none';
-              sendMsgForm.reset();
-              sendMsgTip.style.display = 'none';
-              // 清空select2
-              $('#message-to-user').val(null).trigger('change');
-            }, 1200);
-          } else {
-            sendMsgTip.textContent = res.message || '发送失败';
-            sendMsgTip.style.display = 'block';
-          }
-        };
-
-        // 消息中心Tab相关逻辑
-        const tabMessages = document.getElementById('tab-messages');
-        const messageSection = document.getElementById('message-center-section');
-        const messagePagination = { currentPage: 1, pageSize: 20, total: 0, messages: [] };
-        const messagePrev = document.getElementById('message-prev');
-        const messageNext = document.getElementById('message-next');
-        const messagePageNumbers = document.getElementById('message-page-numbers');
-        const messageStart = document.getElementById('message-start');
-        const messageEnd = document.getElementById('message-end');
-        const messageTotal = document.getElementById('message-total');
-        const messageDetailModal = document.getElementById('message-detail-modal');
-        const messageDetailContent = document.getElementById('message-detail-content');
-        const closeMessageDetail = document.getElementById('close-message-detail');
-
-        // Tab切换逻辑扩展
-        const tabMapExt = [
-          {tab: tabDashboard, section: dashboardSection, title: 'Dashboard', async: false},
-          {tab: tabUsers, section: userSection, title: '用户管理', async: false},
-          {tab: tabProjects, section: projectSection, title: '项目管理', async: false},
-          {tab: tabMessages, section: messageSection, title: '消息管理', async: true},
-          {tab: tabLogs, section: adminLogSection, title: '操作日志', async: false},
-          {tab: tabLoginLogs, section: loginLogSection, title: '登录日志', async: true},
-          {tab: tabAccessLogs, section: accessLogSection, title: '访问日志', async: true}
-        ];
-        function switchTabExt(idx) {
-          tabMapExt.forEach((item, i) => {
-            if (item.tab) item.tab.classList.remove('nav-item-active');
-            if (item.section) item.section.style.display = 'none';
-          });
-          if (tabMapExt[idx].tab) tabMapExt[idx].tab.classList.add('nav-item-active');
-          if (tabMapExt[idx].section) tabMapExt[idx].section.style.display = 'block';
-          document.getElementById('pageTitle').innerText = tabMapExt[idx].title;
-          if (tabMapExt[idx].async && idx === 3) {
-            loadMessages();
-          } else if (tabMapExt[idx].async && idx === 5) {
-            loadUsersForLogs().then(renderLoginLogs);
-          } else if (tabMapExt[idx].async && idx === 6) {
-            loadUsersForLogs().then(renderAccessLogs);
-          } else if (idx === 4) {
-            renderAdminLogs();
-          }
-        }
-        tabMapExt.forEach((item, idx) => {
-          if (item.tab) {
-            item.tab.onclick = (e) => {
-              e.preventDefault();
-              if (idx === 0) loadDashboardStats();
-              switchTabExt(idx);
-            };
-          }
-        });
-        switchTabExt(0);
-
-        // 消息中心功能
-        async function loadMessages() {
-          const res = await apiFetch('/api/users/messages');
-          messagePagination.messages = res;
-          renderMessages();
-        }
-        function renderMessages() {
-          const startIndex = (messagePagination.currentPage - 1) * messagePagination.pageSize;
-          const endIndex = startIndex + messagePagination.pageSize;
-          // 搜索过滤
-          let filtered = messagePagination.messages;
-          if (messageSearchTerm) {
-            const term = messageSearchTerm.toLowerCase();
-            filtered = filtered.filter(msg => {
-              const user = allUsers.find(u => u.id === msg.fromUserId) || {};
-              return (user.name && user.name.toLowerCase().includes(term)) ||
-                     (user.email && user.email.toLowerCase().includes(term)) ||
-                     (msg.title && msg.title.toLowerCase().includes(term)) ||
-                     (msg.content && msg.content.toLowerCase().includes(term));
-            });
-          }
-          const paginated = filtered.slice(startIndex, endIndex);
-          messagePagination.total = filtered.length;
-          messageStart.textContent = startIndex + 1;
-          messageEnd.textContent = Math.min(endIndex, messagePagination.total);
-          messageTotal.textContent = messagePagination.total;
-          messageTableBody.innerHTML = paginated.map((msg, idx) => {
-            const user = allUsers.find(u => u.id === msg.fromUserId);
-            const checked = selectedMsgIds.includes(msg.id) ? 'checked' : '';
-            return `<tr>
-              <td><input type="checkbox" class="message-check" data-id="${msg.id}" ${checked}></td>
-              <td>${startIndex + idx + 1}</td>
-              <td>${user ? (user.name || user.email) : (msg.fromUserId ? msg.fromUserId : '系统')}</td>
-              <td>${msg.title}</td>
-              <td>${msg.content}</td>
-              <td>${new Date(msg.createdAt).toLocaleString()}</td>
-              <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
-              <td>
-                <button class="btn btn-secondary" onclick="showMessageDetail(${msg.id})">详情</button>
-                ${!msg.isRead ? `<button class="btn btn-primary" onclick="markMessageRead(${msg.id})">已读</button>` : ''}
-                <button class="btn btn-danger" onclick="deleteMessage(${msg.id})">删除</button>
-                <button class="btn btn-secondary" onclick="replyMessage(${msg.id})">回复</button>
-              </td>
-            </tr>`;
-          }).join('');
-          updateMessagePagination();
-          // 复选框事件
-          document.querySelectorAll('.message-check').forEach(cb => {
-            cb.onchange = function() {
-              const id = Number(this.getAttribute('data-id'));
-              if (this.checked) {
-                if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id);
-              } else {
-                selectedMsgIds = selectedMsgIds.filter(i => i !== id);
-              }
-              updateBatchBtns();
-              updateCheckAllBox();
-            };
-          });
-          updateCheckAllBox();
-        }
-        function updateMessagePagination() {
-          const totalPages = Math.ceil(messagePagination.total / messagePagination.pageSize);
-          messagePrev.disabled = messagePagination.currentPage <= 1;
-          messageNext.disabled = messagePagination.currentPage >= totalPages;
-          messagePageNumbers.innerHTML = '';
-          const maxVisiblePages = 5;
-          let startPage = Math.max(1, messagePagination.currentPage - Math.floor(maxVisiblePages / 2));
-          let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-          if (endPage - startPage + 1 < maxVisiblePages) {
-            startPage = Math.max(1, endPage - maxVisiblePages + 1);
-          }
-          for (let i = startPage; i <= endPage; i++) {
-            const pageBtn = document.createElement('button');
-            pageBtn.className = `btn ${i === messagePagination.currentPage ? 'btn-primary' : 'btn-secondary'}`;
-            pageBtn.style.padding = '0.5rem 0.8rem';
-            pageBtn.style.fontSize = '0.9rem';
-            pageBtn.textContent = i;
-            pageBtn.onclick = () => {
-              messagePagination.currentPage = i;
-              renderMessages();
-            };
-            messagePageNumbers.appendChild(pageBtn);
-          }
-        }
-        messagePrev.onclick = () => {
-          if (messagePagination.currentPage > 1) {
-            messagePagination.currentPage--;
-            renderMessages();
-          }
-        };
-        messageNext.onclick = () => {
-          const totalPages = Math.ceil(messagePagination.total / messagePagination.pageSize);
-          if (messagePagination.currentPage < totalPages) {
-            messagePagination.currentPage++;
-            renderMessages();
-          }
-        };
-        window.showMessageDetail = function(id) {
-          const msg = messagePagination.messages.find(m => m.id === id);
-          if (!msg) return;
-          // 获取发送人
-          let sender = msg.fromUserId;
-          if (msg.fromUserId && allUsers) {
-            const u = allUsers.find(u => u.id === msg.fromUserId);
-            if (u) sender = u.name || u.email;
-          }
-          messageDetailContent.innerHTML = `<div style='margin-bottom:0.5em;'><b>发送人：</b>${sender || '系统'}</div><div style='margin-bottom:0.5em;'><b>标题：</b>${msg.title}</div><div style='margin-bottom:1em;white-space:pre-line;'><b>内容：</b>${msg.content}</div><div style='color:#888;font-size:0.95em;'>${new Date(msg.createdAt).toLocaleString()}</div>`;
-          messageDetailModal.style.display = 'flex';
-        };
-        closeMessageDetail.onclick = function() {
-          messageDetailModal.style.display = 'none';
-        };
-        // 支持点击弹窗外部关闭
-        messageDetailModal.onclick = function(e) {
-          if (e.target === messageDetailModal) messageDetailModal.style.display = 'none';
-        };
-        window.markMessageRead = async function(id) {
-          await apiFetch(`/api/users/messages/${id}/read`, { method: 'POST' });
-          await loadMessages();
-        };
-       
-
-        // 原生多选下拉组件实现
-        const multiSelectContainer = document.getElementById('message-to-user-multiselect');
-        const multiSelectHidden = document.getElementById('message-to-user-hidden');
-        let allUserOptions = [];
-        let selectedUserIds = [];
-        let multiSelectInput, multiSelectDropdown;
-        // 初始化多选组件
-        function renderMultiSelect(selected = [], filter = '') {
-          multiSelectContainer.innerHTML = '';
-          // 标签
-          selected.forEach(id => {
-            const user = allUserOptions.find(u => u.id === id);
-            if (!user) return;
-            const tag = document.createElement('span');
-            tag.className = 'multi-select-tag';
-            tag.textContent = user.name || user.email || '全体用户';
-            // 删除按钮
-            const remove = document.createElement('span');
-            remove.className = 'multi-select-tag-remove';
-            remove.innerHTML = '&times;';
-            remove.onclick = (e) => {
-              e.stopPropagation();
-              removeUserFromMultiSelect(id);
-            };
-            tag.appendChild(remove);
-            multiSelectContainer.appendChild(tag);
-          });
-          // 输入框
-          multiSelectInput = document.createElement('input');
-          multiSelectInput.type = 'text';
-          multiSelectInput.className = 'multi-select-input';
-          multiSelectInput.placeholder = selected.length === 0 ? '选择接收人（可多选）' : '';
-          multiSelectInput.autocomplete = 'off';
-          multiSelectInput.oninput = () => {
-            renderDropdown(multiSelectInput.value.trim());
-          };
-          multiSelectInput.onfocus = () => {
-            renderDropdown(multiSelectInput.value.trim());
-          };
-          multiSelectInput.onclick = (e) => {
-            renderDropdown(multiSelectInput.value.trim());
-            e.stopPropagation();
-          };
-          multiSelectContainer.appendChild(multiSelectInput);
-          // 下拉
-          renderDropdown(filter);
-        }
-        function renderDropdown(filter = '') {
-          if (multiSelectDropdown) multiSelectDropdown.remove();
-          multiSelectDropdown = document.createElement('div');
-          multiSelectDropdown.className = 'multi-select-dropdown';
-          // 过滤
-          let options = allUserOptions;
-          if (filter) {
-            const f = filter.toLowerCase();
-            options = options.filter(u => (u.name && u.name.toLowerCase().includes(f)) || (u.email && u.email.toLowerCase().includes(f)) || (u.id === '' && '全体用户'.includes(f)));
-          }
-          // "全体用户"互斥逻辑
-          if (selectedUserIds.includes('')) {
-            options = options.filter(u => u.id === '');
-          }
-          // 渲染选项
-          options.forEach(u => {
-            const opt = document.createElement('div');
-            opt.className = 'multi-select-option';
-            opt.textContent = u.id === '' ? '全体用户' : (u.name || u.email);
-            if (selectedUserIds.includes(u.id)) opt.classList.add('selected');
-            opt.onclick = (e) => {
-              e.stopPropagation();
-              if (u.id === '') {
-                // 选中全体用户，清空其它
-                selectedUserIds = [''];
-              } else {
-                // 选中其它，去掉全体用户
-                selectedUserIds = selectedUserIds.filter(i => i !== '');
-                if (!selectedUserIds.includes(u.id)) selectedUserIds.push(u.id);
-              }
-              updateMultiSelect();
-              renderDropdown('');
-            };
-            multiSelectDropdown.appendChild(opt);
-          });
-          if (options.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'multi-select-option';
-            empty.style.color = '#a0aec0';
-            empty.textContent = '无匹配用户';
-            multiSelectDropdown.appendChild(empty);
-          }
-          multiSelectDropdown.classList.add('open');
-          multiSelectContainer.appendChild(multiSelectDropdown);
-        }
-        function removeUserFromMultiSelect(id) {
-          selectedUserIds = selectedUserIds.filter(i => i !== id);
-          updateMultiSelect();
-          renderDropdown('');
-        }
-        function updateMultiSelect() {
-          renderMultiSelect(selectedUserIds);
-          multiSelectHidden.value = JSON.stringify(selectedUserIds);
-        }
-        // 点击外部关闭下拉
-        document.body.addEventListener('click', function() {
-          if (multiSelectDropdown) multiSelectDropdown.style.display = 'none';
-        });
-        multiSelectContainer.onclick = function(e) {
-          if (multiSelectDropdown) multiSelectDropdown.style.display = 'block';
-          multiSelectInput.focus();
-          e.stopPropagation();
-        };
-        // 打开弹窗时加载用户
-        const sendMsgBtn2 = document.getElementById('send-message-btn2');
-        sendMsgBtn2.onclick = async function() {
-          // 加载用户
-          allUserOptions = [{id: '', name: '全体用户'}];
-          const users = await apiFetch('/api/users');
-          users.forEach(u => {
-            allUserOptions.push({id: String(u.id), name: u.name || u.email, email: u.email});
-          });
-          selectedUserIds = [];
-          updateMultiSelect();
-          sendMsgModal.style.display = 'flex';
-          setTimeout(() => { multiSelectInput && multiSelectInput.focus(); }, 100);
-        };
-        // 表单提交时收集所有选中用户ID为数组
-        sendMsgForm.onsubmit = async function(e) {
-          e.preventDefault();
-          const form = new FormData(sendMsgForm);
-          let toUserIds = [];
-          try {
-            toUserIds = JSON.parse(multiSelectHidden.value);
-          } catch { toUserIds = []; }
-          if (toUserIds && toUserIds.includes('')) {
-            toUserIds = ['']; // 只选了全体用户
-          }
-          const data = {
-            title: form.get('title'),
-            content: form.get('content'),
-            toUserIds
-          };
-          const res = await apiFetch('/api/users/messages', {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (res.success) {
-            sendMsgTip.textContent = '发送成功！';
-            sendMsgTip.style.display = 'block';
-            setTimeout(() => {
-              sendMsgModal.style.display = 'none';
-              sendMsgForm.reset();
-              sendMsgTip.style.display = 'none';
-              selectedUserIds = [];
-              updateMultiSelect();
-            }, 1200);
-          } else {
-            sendMsgTip.textContent = res.message || '发送失败';
-            sendMsgTip.style.display = 'block';
-          }
-        };
-
-        // JS部分，替换消息中心相关逻辑
-        const messageTableBody = document.querySelector('#message-table tbody');
-        const messageCheckAll = document.getElementById('message-check-all');
-        const batchDeleteMsg = document.getElementById('batch-delete-msg');
-        const batchReadMsg = document.getElementById('batch-read-msg');
-        const messageSearch = document.getElementById('message-search');
-        let selectedMsgIds = [];
-        let messageSearchTerm = '';
-
-        // 渲染消息表格
-        function renderMessages() {
-          const startIndex = (messagePagination.currentPage - 1) * messagePagination.pageSize;
-          const endIndex = startIndex + messagePagination.pageSize;
-          // 搜索过滤
-          let filtered = messagePagination.messages;
-          if (messageSearchTerm) {
-            const term = messageSearchTerm.toLowerCase();
-            filtered = filtered.filter(msg => {
-              const user = allUsers.find(u => u.id === msg.fromUserId) || {};
-              return (user.name && user.name.toLowerCase().includes(term)) ||
-                     (user.email && user.email.toLowerCase().includes(term)) ||
-                     (msg.title && msg.title.toLowerCase().includes(term)) ||
-                     (msg.content && msg.content.toLowerCase().includes(term));
-            });
-          }
-          const paginated = filtered.slice(startIndex, endIndex);
-          messagePagination.total = filtered.length;
-          messageStart.textContent = startIndex + 1;
-          messageEnd.textContent = Math.min(endIndex, messagePagination.total);
-          messageTotal.textContent = messagePagination.total;
-          messageTableBody.innerHTML = paginated.map((msg, idx) => {
-            const user = allUsers.find(u => u.id === msg.fromUserId);
-            const checked = selectedMsgIds.includes(msg.id) ? 'checked' : '';
-            return `<tr>
-              <td><input type="checkbox" class="message-check" data-id="${msg.id}" ${checked}></td>
-              <td>${startIndex + idx + 1}</td>
-              <td>${user ? (user.name || user.email) : (msg.fromUserId ? msg.fromUserId : '系统')}</td>
-              <td>${msg.title}</td>
-              <td>${msg.content}</td>
-              <td>${new Date(msg.createdAt).toLocaleString()}</td>
-              <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
-              <td>
-                <button class="btn btn-secondary" onclick="showMessageDetail(${msg.id})">详情</button>
-                ${!msg.isRead ? `<button class="btn btn-primary" onclick="markMessageRead(${msg.id})">已读</button>` : ''}
-                <button class="btn btn-danger" onclick="deleteMessage(${msg.id})">删除</button>
-                <button class="btn btn-secondary" onclick="replyMessage(${msg.id})">回复</button>
-              </td>
-            </tr>`;
-          }).join('');
-          updateMessagePagination();
-          // 复选框事件
-          document.querySelectorAll('.message-check').forEach(cb => {
-            cb.onchange = function() {
-              const id = Number(this.getAttribute('data-id'));
-              if (this.checked) {
-                if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id);
-              } else {
-                selectedMsgIds = selectedMsgIds.filter(i => i !== id);
-              }
-              updateBatchBtns();
-              updateCheckAllBox();
-            };
-          });
-          updateCheckAllBox();
-        }
-        function updateCheckAllBox() {
-          const pageIds = Array.from(document.querySelectorAll('.message-check')).map(cb => Number(cb.getAttribute('data-id')));
-          messageCheckAll.checked = pageIds.length > 0 && pageIds.every(id => selectedMsgIds.includes(id));
-          messageCheckAll.indeterminate = pageIds.some(id => selectedMsgIds.includes(id)) && !messageCheckAll.checked;
-        }
-        messageCheckAll.onchange = function() {
-          const pageIds = Array.from(document.querySelectorAll('.message-check')).map(cb => Number(cb.getAttribute('data-id')));
-          if (this.checked) {
-            pageIds.forEach(id => { if (!selectedMsgIds.includes(id)) selectedMsgIds.push(id); });
-          } else {
-            selectedMsgIds = selectedMsgIds.filter(id => !pageIds.includes(id));
-          }
-          renderMessages();
-          updateBatchBtns();
-        };
-        function updateBatchBtns() {
-          batchDeleteMsg.disabled = selectedMsgIds.length === 0;
-          batchReadMsg.disabled = selectedMsgIds.length === 0;
-        }
-        batchDeleteMsg.onclick = async function() {
-          if (!selectedMsgIds.length) return;
-          if (!confirm('确定要批量删除选中的消息吗？')) return;
-          for (const id of selectedMsgIds) {
-            await deleteMessage(id, true);
-          }
-          selectedMsgIds = [];
-          await loadMessages();
-          updateBatchBtns();
-        };
-        batchReadMsg.onclick = async function() {
-          if (!selectedMsgIds.length) return;
-          for (const id of selectedMsgIds) {
-            await markMessageRead(id, true);
-          }
-          selectedMsgIds = [];
-          await loadMessages();
-          updateBatchBtns();
-        };
-        window.deleteMessage = async function(id, silent) {
-          if (!silent && !confirm('确定要删除这条消息吗？')) return;
-          await apiFetch(`/api/users/messages/${id}`, { method: 'DELETE' });
-          await loadMessages();
-        };
-        window.replyMessage = function(id) {
-          const msg = messagePagination.messages.find(m => m.id === id);
-          if (!msg) return;
-          // 获取原发送人
-          let sender = msg.fromUserId;
-          let senderName = sender;
-          if (msg.fromUserId && allUsers) {
-            const u = allUsers.find(u => u.id === msg.fromUserId);
-            if (u) senderName = u.name || u.email;
-          }
-          document.getElementById('reply-modal').style.display = 'flex';
-          document.getElementById('reply-to-user').value = senderName || sender || '系统';
-          document.getElementById('reply-title').value = '回复：' + msg.title;
-          document.getElementById('reply-content').value = '';
-          document.getElementById('reply-tip').style.display = 'none';
-          window.currentReplyToUserId = msg.fromUserId;
-        };
-        // 关闭弹窗
-        const replyCancel = document.getElementById('reply-cancel');
-        if (replyCancel) replyCancel.onclick = function() {
-          document.getElementById('reply-modal').style.display = 'none';
-        };
-        // 回复表单提交
-        const replyForm = document.getElementById('reply-form');
-        if (replyForm) replyForm.onsubmit = async function(e) {
-          e.preventDefault();
-          const title = document.getElementById('reply-title').value.trim();
-          const content = document.getElementById('reply-content').value.trim();
-          const toUserIds = [window.currentReplyToUserId];
-          const tip = document.getElementById('reply-tip');
-          try {
-            const res = await apiFetch('/api/users/messages', {
-              method: 'POST',
-              body: JSON.stringify({ title, content, toUserIds }),
-              headers: { 'Content-Type': 'application/json' }
-            });
-            if (res.success) {
-              tip.textContent = '发送成功！';
-              tip.style.display = 'block';
-              setTimeout(() => {
-                document.getElementById('reply-modal').style.display = 'none';
-                replyForm.reset();
-                tip.style.display = 'none';
-                loadMessages();
-              }, 1200);
-            } else {
-              tip.textContent = res.message || '发送失败';
-              tip.style.display = 'block';
-            }
-          } catch {
-            tip.textContent = '发送失败';
-            tip.style.display = 'block';
-          }
-        };
-        messageSearch.oninput = function() {
-          messageSearchTerm = this.value.trim();
-          messagePagination.currentPage = 1;
-          renderMessages();
-        };
-
-        // JS部分，分页和搜索逻辑
-        const messagePageSize = document.getElementById('message-page-size');
-        messagePageSize.onchange = function(e) {
-          messagePagination.pageSize = parseInt(e.target.value);
-          messagePagination.currentPage = 1;
-          renderMessages();
-        };
-        messageSearch.oninput = function() {
-          messageSearchTerm = this.value.trim();
-          messagePagination.currentPage = 1;
-          renderMessages();
-        };
-    });
-    </script>
 </body>
 </html> 

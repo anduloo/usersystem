@@ -8,25 +8,32 @@ datasource db {
 }
 
 model User {
-  id                 Int                 @id @default(autoincrement())
-  email              String              @unique
-  password           String
-  name               String?
-  role               String              @default("USER")
-  wechatOpenId       String?             @unique
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  isActive           Boolean             @default(true)
-  isSuperAdmin       Boolean             @default(false)
-  projectAssignments ProjectAssignment[]
+  id                        Int                 @id @default(autoincrement())
+  email                     String              @unique
+  password                  String
+  name                      String?
+  role                      String              @default("USER")
+  wechatOpenId              String?             @unique
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+  isActive                  Boolean             @default(true)
+  isSuperAdmin              Boolean             @default(false)
+  currentSession            String?
+  tokenVersion              Int                 @default(0)
+  emailConfirmed            Boolean             @default(false)
+  emailConfirmToken         String?             @unique @db.VarChar(255)
+  emailConfirmTokenExpires  DateTime?           @db.Timestamp(6)
+  resetPasswordToken        String?             @unique @db.VarChar(255)
+  resetPasswordTokenExpires DateTime?           @db.Timestamp(6)
+  projectAssignments        ProjectAssignment[]
 }
 
 model Project {
-  id                 Int                 @id @default(autoincrement())
-  name               String              @unique
-  description        String?
-  url                String?
-  projectAssignments ProjectAssignment[]
+  id                    Int                    @id @default(autoincrement())
+  name                  String                 @unique
+  description           String?
+  url                   String?
+  projectAssignments    ProjectAssignment[]
   userProjectAccessLogs UserProjectAccessLog[]
 }
 
@@ -68,7 +75,6 @@ model UserProjectAccessLog {
   userAgent String?
   createdAt DateTime @default(now())
   city      String?  @db.VarChar
-
   project   Project  @relation(fields: [projectId], references: [id])
 }
 
@@ -76,8 +82,15 @@ model Message {
   id         Int      @id @default(autoincrement())
   title      String
   content    String
-  fromUserId Int?     // 发送人，系统消息可为 null
-  toUserId   Int?     // 接收人，null 表示全体用户
+  fromUserId Int?
+  toUserId   Int?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
+}
+
+model SystemConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }

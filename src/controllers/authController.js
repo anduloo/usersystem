@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 // const fetch = require('node-fetch');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+const { v4: uuidv4 } = require('uuid');
+const nodemailer = require('nodemailer');
+const { getConfigByKey } = require('./configController');
 
 const register = async (req, res) => {
   const { email, password, name, redirect_uri } = req.body;
@@ -14,15 +17,68 @@ const register = async (req, res) => {
       return res.redirect(`/register?error=邮箱和密码不能为空&redirect_uri=${safeRedirectUri}`);
     }
 
+    // 注册前清理同邮箱未确认用户，防止token混淆
+    await prisma.user.deleteMany({
+      where: {
+        email,
+        emailConfirmed: false
+      }
+    });
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.redirect(`/register?error=该邮箱已被注册&redirect_uri=${safeRedirectUri}`);
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
+    const token = uuidv4();
+    const tokenExpires = new Date(Date.now() + 24*60*60*1000); // 24小时
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, name },
+      data: {
+        email,
+        password: hashedPassword,
+        name,
+        emailConfirmed: false,
+        emailConfirmToken: token,
+        emailConfirmTokenExpires: tokenExpires
+      },
     });
+
+    // 发送确认邮件（支持模板）
+    let template = await getConfigByKey('welcome_mail_template');
+    if (!template) {
+      template = '欢迎注册，{{username}}！请点击以下链接完成邮箱确认：<a href="{{confirmLink}}">{{confirmLink}}</a>。24小时内有效。';
+    }
+    const confirmLink = `${req.protocol}://${req.get('host')}/api/auth/confirm-email?token=${token}`;
+    const mailContent = template
+      .replace(/{{username}}/g, name || email)
+      .replace(/{{confirmLink}}/g, confirmLink);
+
+    // 读取系统配置表的邮件参数
+    const mailHost = await getConfigByKey('mail_host');
+    const mailPort = await getConfigByKey('mail_port');
+    const mailSecure = await getConfigByKey('mail_secure');
+    const mailUser = await getConfigByKey('mail_user');
+    const mailPass = await getConfigByKey('mail_pass');
+    const mailFrom = await getConfigByKey('mail_from');
+
+    try {
+      const transporter = nodemailer.createTransport({
+        host: mailHost,
+        port: Number(mailPort),
+        secure: mailSecure === 'ssl',
+        auth: { user: mailUser, pass: mailPass },
+        tls: mailSecure !== 'ssl' ? { rejectUnauthorized: false } : undefined
+      });
+      await transporter.sendMail({
+        from: mailFrom || mailUser,
+        to: email,
+        subject: '邮箱确认',
+        html: mailContent
+      });
+    } catch (e) {
+      console.error('发送确认邮件失败:', e);
+    }
 
     // 注册成功后，重定向到登录页并带上 success 参数
     return res.redirect('/login?success=1');
@@ -31,6 +87,22 @@ const register = async (req, res) => {
     console.error('注册失败:', error);
     res.redirect(`/register?error=服务器内部错误&redirect_uri=${safeRedirectUri}`);
   }
+};
+
+// 新增邮箱确认接口
+const confirmEmail = async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(400).send('无效的确认链接');
+  const user = await prisma.user.findFirst({ where: { emailConfirmToken: token } });
+  if (!user) return res.status(400).send('无效的确认链接');
+  if (user.emailConfirmTokenExpires && user.emailConfirmTokenExpires < new Date()) {
+    return res.status(400).send('确认链接已过期');
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailConfirmed: true, emailConfirmToken: null, emailConfirmTokenExpires: null }
+  });
+  res.redirect('/portal');
 };
 
 async function getCityByIp(ip) {
@@ -101,6 +173,9 @@ const login = async (req, res) => {
     if (user.isActive === false) {
       return res.redirect(errorRedirect.replace('%s', '账号已被禁用'));
     }
+    if (!user.emailConfirmed) {
+      return res.redirect(errorRedirect.replace('%s', '请先完成邮箱确认'));
+    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -120,8 +195,21 @@ const login = async (req, res) => {
       }).catch(() => {});
     });
 
+    // 生成新的sessionId
+    const sessionId = uuidv4();
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { currentSession: sessionId }
+    });
+
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        tokenVersion: user.tokenVersion,
+        sessionId: sessionId
+      },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -212,10 +300,142 @@ const getPortalData = async (req, res) => {
   }
 };
 
+// 请求重置密码
+const requestResetPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: '邮箱不能为空' });
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(404).json({ message: '用户不存在' });
+
+  // 生成token和过期时间
+  const token = uuidv4();
+  const tokenExpires = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2小时有效
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetPasswordToken: token,
+      resetPasswordTokenExpires: tokenExpires
+    }
+  });
+
+  // 邮件模板
+  let template = await getConfigByKey('reset_password_mail_template');
+  if (!template) {
+    template = '您好 {{username}}，您正在重置密码。请点击以下链接重置密码：<a href="{{resetLink}}">{{resetLink}}</a>。{{expireTime}}内有效。';
+  }
+  const resetLink = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+  const expireTime = '2小时';
+  const mailContent = template
+    .replace(/{{username}}/g, user.name || user.email)
+    .replace(/{{resetLink}}/g, resetLink)
+    .replace(/{{expireTime}}/g, expireTime);
+
+  // 邮件参数
+  const mailHost = await getConfigByKey('mail_host');
+  const mailPort = await getConfigByKey('mail_port');
+  const mailSecure = await getConfigByKey('mail_secure');
+  const mailUser = await getConfigByKey('mail_user');
+  const mailPass = await getConfigByKey('mail_pass');
+  const mailFrom = await getConfigByKey('mail_from');
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: mailHost,
+      port: Number(mailPort),
+      secure: mailSecure === 'ssl',
+      auth: { user: mailUser, pass: mailPass },
+      tls: mailSecure !== 'ssl' ? { rejectUnauthorized: false } : undefined
+    });
+    await transporter.sendMail({
+      from: mailFrom || mailUser,
+      to: email,
+      subject: '重置密码',
+      html: mailContent
+    });
+    return res.json({ success: true, message: '重置密码邮件已发送，请查收邮箱' });
+  } catch (e) {
+    console.error('发送重置密码邮件失败:', e);
+    return res.status(500).json({ message: '邮件发送失败' });
+  }
+};
+
+// 重置密码
+const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ message: '参数不完整' });
+  const user = await prisma.user.findFirst({
+    where: {
+      resetPasswordToken: token,
+      resetPasswordTokenExpires: { gte: new Date() }
+    }
+  });
+  if (!user) return res.status(400).json({ message: '重置链接无效或已过期' });
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashed,
+      resetPasswordToken: null,
+      resetPasswordTokenExpires: null
+    }
+  });
+  return res.json({ success: true, message: '密码重置成功，请重新登录' });
+};
+
+// 验证重置密码token
+const verifyResetToken = async (req, res) => {
+  const { token } = req.body;
+  console.log('验证重置token:', token);
+  
+  if (!token) {
+    console.log('Token为空');
+    return res.status(400).json({ message: 'Token不能为空' });
+  }
+  
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordTokenExpires: { gte: new Date() }
+      }
+    });
+    
+    console.log('查询结果:', user ? '找到用户' : '未找到用户');
+    
+    if (!user) {
+      // 检查是否有token但已过期
+      const expiredUser = await prisma.user.findFirst({
+        where: {
+          resetPasswordToken: token
+        }
+      });
+      
+      if (expiredUser) {
+        console.log('Token已过期');
+        return res.status(400).json({ message: '重置链接已过期' });
+      } else {
+        console.log('Token不存在');
+        return res.status(400).json({ message: '重置链接无效' });
+      }
+    }
+    
+    console.log('Token有效');
+    return res.json({ success: true, message: 'Token有效' });
+  } catch (error) {
+    console.error('验证token时出错:', error);
+    return res.status(500).json({ message: '服务器内部错误' });
+  }
+};
+
 module.exports = {
   register,
   login,
   showPortal,
   getPortalData,
   getCityByIp,
+  confirmEmail,
+  requestResetPassword,
+  resetPassword,
+  verifyResetToken,
 };

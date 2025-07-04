@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes'); // 引入新路由
 const projectRoutes = require('./routes/projectRoutes'); // 引入新路由
+const configRoutes = require('./routes/configRoutes'); // 新增
 
 const app = express();
 
@@ -77,6 +78,9 @@ app.use('/titie', express.static(path.join(rootDir, 'titie')));
 app.use('/namecard', express.static(path.join(rootDir, 'namecard')));
 app.use('/image', express.static(path.join(rootDir, 'image')));
 app.use('/css', express.static(path.join(__dirname, '../css')));
+app.use('/js', express.static(path.join(__dirname, '../js')));
+app.use('/fonts', express.static(path.join(__dirname, '../fonts')));
+app.use('/components', express.static(path.join(__dirname, '../components')));
 app.use(express.static(path.join(__dirname, '../public')));
 app.get('/', (req, res) => {
   res.send('用户管理系统后端服务已启动！');
@@ -89,6 +93,7 @@ app.use('/', authRoutes);
 // API 路由
 app.use('/api/users', userRoutes); 
 app.use('/api/projects', projectRoutes); 
+app.use('/api/configs', configRoutes); // 新增
 
 const PORT = process.env.PORT || 3001;
 

@@ -1,0 +1,63 @@
+/* 通用表格样式 */
+
+table, .admin-table, .portal-msg-table, .section-card table {
+  border-radius: var(--radius);
+  box-shadow: none;
+  background: rgba(255,255,255,0.5);
+  overflow: hidden;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 1.5rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* 统一表格表头样式（以admin页面为标准） */
+table th, .admin-table th, .portal-msg-table th {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.15);
+  text-transform: none;
+  letter-spacing: 0.5px;
+  padding: 0.6rem 0.8rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  text-align: left;
+  white-space: nowrap;
+}
+
+table th::after, .admin-table th::after, .portal-msg-table th::after, .section-card table th::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+}
+
+table td, .admin-table td, .portal-msg-table td, .section-card table td {
+  color: var(--text);
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  transition: all 0.2s ease;
+}
+
+table tr:last-child td, .admin-table tr:last-child td, .portal-msg-table tr:last-child td, .section-card table tr:last-child td {
+  border-bottom: none;
+}
+
+table tbody tr, .admin-table tbody tr, .portal-msg-table tbody tr, .section-card table tbody tr {
+  transition: all 0.2s ease;
+}
+
+table tbody tr:hover, .admin-table tbody tr:hover, .portal-msg-table tbody tr:hover, .section-card table tbody tr:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  transform: scale(1.01);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+/* 分页、工具栏等表格相关样式可后续补充 */ 

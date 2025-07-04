@@ -158,6 +158,14 @@ body::before {
   border-radius: 2px;
 }
 
+.reset-title {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
 .login-accent {
   color: var(--accent2);
   font-weight: 900;
@@ -177,7 +185,6 @@ body::before {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
 .form-group {
@@ -564,4 +571,128 @@ body::before {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+/* 密码强度指示器 */
+.password-strength {
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: none;
+}
+
+.password-strength.weak {
+  background: rgba(245, 101, 101, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(245, 101, 101, 0.2);
+  display: block;
+}
+
+.password-strength.medium {
+  background: rgba(237, 137, 54, 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(237, 137, 54, 0.2);
+  display: block;
+}
+
+.password-strength.strong {
+  background: rgba(72, 187, 120, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(72, 187, 120, 0.2);
+  display: block;
+}
+
+/* 加载状态 */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 忘记密码弹窗美化 */
+#forgotPasswordModal .modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+}
+#forgotPasswordModal .form-group label {
+  color: var(--accent2);
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+#forgotPasswordModal .form-error, #forgotPasswordModal .form-success {
+  margin: 0.7em 0 0.2em 0;
+  text-align: center;
+  font-size: 1rem;
+  border-radius: var(--radius);
+  padding: 0.7em 1em;
+  display: none;
+}
+#forgotPasswordModal .form-error {
+  background: rgba(245, 101, 101, 0.08);
+  color: var(--danger);
+  border: 1px solid rgba(245, 101, 101, 0.18);
+}
+#forgotPasswordModal .form-success {
+  background: rgba(72, 187, 120, 0.08);
+  color: var(--success);
+  border: 1px solid rgba(72, 187, 120, 0.18);
+}
+#forgotPasswordModal .btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: var(--radius);
+  padding: 0.7em 1.5em;
+  font-size: 1rem;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+#forgotPasswordModal .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+#forgotPasswordModal .btn-secondary {
+  background: #f7fafc;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7em 1.5em;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+#forgotPasswordModal .btn-secondary:hover {
+  background: #e2e8f0;
+}
+#forgotSendBtnLoading.loading {
+  display: inline-block !important;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
 } 

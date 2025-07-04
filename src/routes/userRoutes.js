@@ -143,14 +143,31 @@ router.post('/visit-project', authMiddleware, async (req, res) => {
 
 // 仪表盘统计接口
 router.get('/admin/dashboard-stats', authMiddleware, adminMiddleware, async (req, res) => {
+  const { startDate, endDate } = req.query;
+  
+  // 构建时间筛选条件
+  const dateFilter = {};
+  if (startDate && endDate) {
+    dateFilter.createdAt = {
+      gte: new Date(startDate),
+      lte: new Date(endDate + 'T23:59:59.999Z')
+    };
+  }
+  
   const [projectAccess, userLogin, userCount, projectCount, projects, users, cityLogin] = await Promise.all([
     prisma.userProjectAccessLog.groupBy({
       by: ['projectId'],
-      _count: { projectId: true }
+      where: dateFilter,
+      _count: { projectId: true },
+      orderBy: { _count: { projectId: 'desc' } },
+      take: 10
     }),
     prisma.userLoginLog.groupBy({
       by: ['userId'],
-      _count: { userId: true }
+      where: dateFilter,
+      _count: { userId: true },
+      orderBy: { _count: { userId: 'desc' } },
+      take: 10
     }),
     prisma.user.count(),
     prisma.project.count(),
@@ -158,7 +175,10 @@ router.get('/admin/dashboard-stats', authMiddleware, adminMiddleware, async (req
     prisma.user.findMany({ select: { id: true, name: true, email: true } }),
     prisma.userLoginLog.groupBy({
       by: ['city'],
-      _count: { city: true }
+      where: dateFilter,
+      _count: { city: true },
+      orderBy: { _count: { city: 'desc' } },
+      take: 10
     })
   ]);
   res.json({
@@ -182,7 +202,7 @@ router.post('/me/change-password', authMiddleware, async (req, res) => {
   if (!valid) return res.status(400).json({ message: '当前密码错误' });
   if (newPassword.length < 6) return res.status(400).json({ message: '新密码不能少于6位' });
   const hashed = await require('bcryptjs').hash(newPassword, 12);
-  await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+  await prisma.user.update({ where: { id: user.id }, data: { password: hashed, tokenVersion: { increment: 1 }, currentSession: null } });
   res.json({ success: true });
 });
 
@@ -246,6 +266,27 @@ router.post('/messages/:id/read', authMiddleware, async (req, res) => {
     return res.status(403).json({ message: '无权操作' });
   }
   await prisma.message.update({ where: { id }, data: { isRead: true } });
+  res.json({ success: true });
+});
+
+// 删除消息
+router.delete('/messages/:id', authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  const userId = req.user.id;
+  
+  // 查找消息
+  const msg = await prisma.message.findUnique({ where: { id } });
+  if (!msg) {
+    return res.status(404).json({ message: '消息不存在' });
+  }
+  
+  // 检查权限：只能删除发给自己的消息或自己发送的消息
+  if (msg.toUserId && msg.toUserId !== userId && msg.fromUserId !== userId) {
+    return res.status(403).json({ message: '无权删除此消息' });
+  }
+  
+  // 删除消息
+  await prisma.message.delete({ where: { id } });
   res.json({ success: true });
 });
 

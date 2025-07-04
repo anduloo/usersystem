@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, showPortal, getPortalData } = require('../controllers/authController');
+const { register, login, showPortal, getPortalData, confirmEmail, requestResetPassword, resetPassword, verifyResetToken } = require('../controllers/authController');
 const { 
   renderLoginPage, 
-  renderAdminPage
+  renderAdminPage,
+  renderResetPasswordPage
 } = require('../controllers/pagesController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
+const configController = require('../controllers/configController');
 
 // === 认证相关 POST 请求 ===
 router.post('/api/auth/register', register);
@@ -22,8 +24,29 @@ router.get('/login', renderLoginPage);
 router.get('/register', renderLoginPage); // 合并页面
 router.get('/portal', showPortal);
 router.get('/admin', authMiddleware, adminMiddleware, renderAdminPage);
+router.get('/reset-password', renderResetPasswordPage);
 
 // === 数据 API GET 请求 ===
 router.get('/api/portal', authMiddleware, getPortalData);
+
+// 系统配置相关（仅超级管理员）
+router.get('/api/admin/configs', authMiddleware, adminMiddleware, async (req, res, next) => {
+  if (!req.user.isSuperAdmin) return res.status(403).json({ message: '仅超级管理员可操作' });
+  return configController.getAllConfigs(req, res, next);
+});
+router.post('/api/admin/configs', authMiddleware, adminMiddleware, async (req, res, next) => {
+  if (!req.user.isSuperAdmin) return res.status(403).json({ message: '仅超级管理员可操作' });
+  return configController.upsertConfig(req, res, next);
+});
+router.delete('/api/admin/configs/:key', authMiddleware, adminMiddleware, async (req, res, next) => {
+  if (!req.user.isSuperAdmin) return res.status(403).json({ message: '仅超级管理员可操作' });
+  return configController.deleteConfig(req, res, next);
+});
+
+router.get('/api/auth/confirm-email', confirmEmail);
+
+router.post('/api/auth/request-reset-password', requestResetPassword);
+router.post('/api/auth/reset-password', resetPassword);
+router.post('/api/auth/verify-reset-token', verifyResetToken);
 
 module.exports = router;
