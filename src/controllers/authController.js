@@ -7,6 +7,10 @@ const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const { getConfigByKey } = require('./configController');
 
+// IP 地理位置缓存（内存缓存，重启后清空）
+const ipLocationCache = new Map();
+const CACHE_EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24小时缓存
+
 const register = async (req, res) => {
   const { email, password, name, redirect_uri } = req.body;
   
@@ -112,40 +116,73 @@ async function getCityByIp(ip) {
       ip = ip.split(',')[0].trim();
     }
     if (!ip || ip === '::1' || ip === '127.0.0.1') {
-      console.log('getCityByIp: 本地或无效IP，返回空');
       return '';
     }
 
-    // 1. 淘宝接口
-    const tbUrl = `https://ip.taobao.com/outGetIpInfo?ip=${ip}&accessKey=alibaba-inc`;
-    console.log('getCityByIp 淘宝请求:', tbUrl);
-    try {
-      const tbRes = await fetch(tbUrl, { timeout: 1000 });
-      const tbData = await tbRes.json();
-      console.log('getCityByIp 淘宝返回:', tbData);
-      if (tbData.code === 0 && tbData.data) {
-        // 淘宝接口返回的城市字段
-        return tbData.data.city || tbData.data.region || tbData.data.country || '';
-      }
-    } catch (e) {
-      console.warn('淘宝IP接口失败，尝试备用:', e);
+    // 检查缓存
+    const cached = ipLocationCache.get(ip);
+    if (cached && Date.now() - cached.timestamp < CACHE_EXPIRE_TIME) {
+      return cached.city;
     }
 
-    // 2. 备用 ip-api.com
-    const url = `http://ip-api.com/json/${ip}?lang=zh-CN`;
-    console.log('getCityByIp 备用请求:', url);
-    try {
-      const res = await fetch(url, { timeout: 1000 });
-      const data = await res.json();
-      console.log('getCityByIp 备用返回:', data);
-      if (data.status === 'success') {
-        return data.city || data.regionName || data.country || '';
+    // 使用 Promise.race 同时请求两个接口，取最快的结果
+    const promises = [
+      // 1. 淘宝接口
+      (async () => {
+        try {
+          const tbUrl = `https://ip.taobao.com/outGetIpInfo?ip=${ip}&accessKey=alibaba-inc`;
+          const tbRes = await fetch(tbUrl, { timeout: 500 }); // 减少超时时间
+          const tbData = await tbRes.json();
+          if (tbData.code === 0 && tbData.data) {
+            return tbData.data.city || tbData.data.region || tbData.data.country || '';
+          }
+        } catch (e) {
+          console.warn('淘宝IP接口失败:', e.message);
+        }
+        return null;
+      })(),
+      
+      // 2. 备用 ip-api.com
+      (async () => {
+        try {
+          const url = `http://ip-api.com/json/${ip}?lang=zh-CN`;
+          const res = await fetch(url, { timeout: 500 }); // 减少超时时间
+          const data = await res.json();
+          if (data.status === 'success') {
+            return data.city || data.regionName || data.country || '';
+          }
+        } catch (e) {
+          console.warn('ip-api.com 备用接口失败:', e.message);
+        }
+        return null;
+      })()
+    ];
+
+    // 等待第一个成功的结果，最多等待 800ms
+    const result = await Promise.race([
+      Promise.any(promises),
+      new Promise(resolve => setTimeout(() => resolve(''), 800))
+    ]);
+
+    const city = result || '';
+    
+    // 缓存结果
+    ipLocationCache.set(ip, {
+      city,
+      timestamp: Date.now()
+    });
+
+    // 清理过期缓存（每100次查询清理一次）
+    if (ipLocationCache.size > 1000) {
+      const now = Date.now();
+      for (const [key, value] of ipLocationCache.entries()) {
+        if (now - value.timestamp > CACHE_EXPIRE_TIME) {
+          ipLocationCache.delete(key);
+        }
       }
-    } catch (e) {
-      console.warn('ip-api.com 备用接口也失败:', e);
     }
 
-    return '';
+    return city;
   } catch (e) {
     console.error('getCityByIp error:', e);
     return '';
@@ -183,16 +220,27 @@ const login = async (req, res) => {
     }
 
     const ip = req.headers['x-forwarded-for'] || req.ip;
-    // 异步写入登录日志，不阻塞主流程
-    getCityByIp(ip).then(city => {
-      prisma.userLoginLog.create({
-        data: {
-          userId: user.id,
-          ip,
-          userAgent: req.headers['user-agent'] || '',
-          city
-        }
-      }).catch(() => {});
+    
+    // 异步写入登录日志，但不阻塞主流程
+    // 使用 setImmediate 确保在当前事件循环结束后执行
+    setImmediate(async () => {
+      try {
+        // 检查是否启用 IP 地理位置查询（可以通过环境变量控制）
+        const enableIpLocation = process.env.ENABLE_IP_LOCATION !== 'false';
+        const city = enableIpLocation ? await getCityByIp(ip) : '';
+        
+        await prisma.userLoginLog.create({
+          data: {
+            userId: user.id,
+            ip,
+            userAgent: req.headers['user-agent'] || '',
+            city
+          }
+        });
+      } catch (error) {
+        console.error('写入登录日志失败:', error);
+        // 即使日志写入失败，也不影响登录流程
+      }
     });
 
     // 生成新的sessionId
@@ -386,10 +434,8 @@ const resetPassword = async (req, res) => {
 // 验证重置密码token
 const verifyResetToken = async (req, res) => {
   const { token } = req.body;
-  console.log('验证重置token:', token);
   
   if (!token) {
-    console.log('Token为空');
     return res.status(400).json({ message: 'Token不能为空' });
   }
   
@@ -401,8 +447,6 @@ const verifyResetToken = async (req, res) => {
       }
     });
     
-    console.log('查询结果:', user ? '找到用户' : '未找到用户');
-    
     if (!user) {
       // 检查是否有token但已过期
       const expiredUser = await prisma.user.findFirst({
@@ -412,15 +456,12 @@ const verifyResetToken = async (req, res) => {
       });
       
       if (expiredUser) {
-        console.log('Token已过期');
         return res.status(400).json({ message: '重置链接已过期' });
       } else {
-        console.log('Token不存在');
         return res.status(400).json({ message: '重置链接无效' });
       }
     }
     
-    console.log('Token有效');
     return res.json({ success: true, message: 'Token有效' });
   } catch (error) {
     console.error('验证token时出错:', error);

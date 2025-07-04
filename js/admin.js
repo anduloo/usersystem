@@ -69,12 +69,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` }
                 });
                 if (response.status === 401) {
-                    console.log('Token已失效，可能是多端登录被踢下线');
                     localStorage.removeItem('jwt_token');
                     showKickoutTipAndRedirect();
                 }
             } catch (error) {
-                console.log('检查token状态时网络错误:', error);
+                // 静默处理网络错误，避免频繁的console输出
             }
         }, 10000);
     }
@@ -1458,9 +1457,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     document.getElementById('mail-test-btn').onclick = async function() {
-      console.log('点击了测试发送');
       const resultDiv = document.getElementById('mail-test-result');
-      console.log('resultDiv:', resultDiv);
       if (!resultDiv) {
         alert('找不到 mail-test-result 元素');
         return;
@@ -1484,7 +1481,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             to: document.getElementById('mail-test-to').value.trim()
           })
         });
-        console.log('测试返回：', res);
         if (res && res.success) {
           resultDiv.style.color = '#059669';
           resultDiv.textContent = res.message || '测试发送成功！';
