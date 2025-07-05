@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginUrl = `/login`;
     
     let token = null;
+    let allUsers = [];
     
     // 从URL获取token
     const params = new URLSearchParams(window.location.search);
@@ -224,4 +225,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // 消息中心功能已在 message.js 中实现，这里不需要重复代码
+
 });
+

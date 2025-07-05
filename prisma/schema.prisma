@@ -26,6 +26,8 @@ model User {
   resetPasswordToken        String?             @unique @db.VarChar(255)
   resetPasswordTokenExpires DateTime?           @db.Timestamp(6)
   projectAssignments        ProjectAssignment[]
+  sentMessages     Message[] @relation("MessageFromUser")
+  receivedMessages Message[] @relation("MessageToUser")
 }
 
 model Project {
@@ -82,10 +84,13 @@ model Message {
   id         Int      @id @default(autoincrement())
   title      String
   content    String
-  fromUserId Int?
+  fromUserId Int
   toUserId   Int?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
+
+  fromUser   User     @relation("MessageFromUser", fields: [fromUserId], references: [id])
+  toUser     User?    @relation("MessageToUser", fields: [toUserId], references: [id])
 }
 
 model SystemConfig {

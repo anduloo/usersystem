@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const projectForm = document.getElementById('project-form');
     const permissionsModal = document.getElementById('permissions-modal');
     const adminLogTableBody = document.querySelector('#admin-log-table tbody');
+    const messageTableBody = document.querySelector('#message-table tbody');
 
     // 显示当前登录管理员姓名或邮箱
     let isSuperAdmin = false;
@@ -267,7 +268,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 apiFetch('/api/users'),
                 apiFetch('/api/projects')
             ]);
-            allUsers = users;
+            console.log('loadInitialData users:', users); // 调试输出
+            if (users && users.length > 0) {
+                allUsers = users;
+                // 设置全局 allUsers，供其他模块使用
+                window.allUsers = allUsers;
+            } else {
+                console.warn('loadInitialData: users 为空，不覆盖 allUsers');
+            }
             allProjects = projects;
             renderUsers();
             renderProjects();
@@ -738,6 +746,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tabDashboard = document.getElementById('tab-dashboard');
     const tabUsers = document.getElementById('tab-users');
     const tabProjects = document.getElementById('tab-projects');
+    const tabMessages = document.getElementById('tab-messages');
     const tabLogs = document.getElementById('tab-logs');
     const tabLoginLogs = document.getElementById('tab-login-logs');
     const tabAccessLogs = document.getElementById('tab-access-logs');
@@ -745,6 +754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dashboardSection = document.getElementById('dashboard-section');
     const userSection = document.getElementById('user-management');
     const projectSection = document.getElementById('project-management');
+    const messageSection = document.getElementById('message-center-section');
     const adminLogSection = document.getElementById('admin-log-section');
     const loginLogSection = document.getElementById('login-log-section');
     const accessLogSection = document.getElementById('access-log-section');
@@ -756,6 +766,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loginLogTableBody = document.querySelector('#login-log-table tbody');
     const accessLogTableBody = document.querySelector('#access-log-table tbody');
     let allUsersForLogs = [];
+    let allProjectsForLogs = [];
     // 加载用户和项目下拉
     async function loadUsersForLogs() {
         allUsersForLogs = await apiFetch('/api/users');
@@ -1240,66 +1251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         dropdownMenu.classList.remove('show');
     });
 
-    // 发送消息弹窗逻辑
-    const sendMsgModal = document.getElementById('send-message-modal');
-    const sendMsgForm = document.getElementById('send-message-form');
-    const sendMsgCancel = document.getElementById('cancel-send-message');
-    const sendMsgTip = document.getElementById('send-message-tip');
-    const toUserSelect = document.getElementById('message-to-user');
-
-    sendMsgCancel.onclick = function() {
-      sendMsgModal.style.display = 'none';
-      sendMsgForm.reset();
-      sendMsgTip.style.display = 'none';
-    };
-    sendMsgForm.onsubmit = async function(e) {
-      e.preventDefault();
-      const form = new FormData(sendMsgForm);
-      let toUserIds = $('#message-to-user').val(); // 数组
-      if (toUserIds && toUserIds.includes('')) {
-        toUserIds = ['']; // 只选了全体用户
-      }
-      const data = {
-        title: form.get('title'),
-        content: form.get('content'),
-        toUserIds
-      };
-      const res = await apiFetch('/api/users/messages', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (res.success) {
-        sendMsgTip.textContent = '发送成功！';
-        sendMsgTip.style.display = 'block';
-        setTimeout(() => {
-          sendMsgModal.style.display = 'none';
-          sendMsgForm.reset();
-          sendMsgTip.style.display = 'none';
-          // 清空select2
-          $('#message-to-user').val(null).trigger('change');
-        }, 1200);
-      } else {
-        sendMsgTip.textContent = res.message || '发送失败';
-        sendMsgTip.style.display = 'block';
-      }
-    };
-
-    // 消息中心Tab相关逻辑
-    const tabMessages = document.getElementById('tab-messages');
-    const messageSection = document.getElementById('message-center-section');
-    const messagePagination = { currentPage: 1, pageSize: 20, total: 0, messages: [] };
-    const messagePrev = document.getElementById('message-prev');
-    const messageNext = document.getElementById('message-next');
-    const messagePageNumbers = document.getElementById('message-page-numbers');
-    const messageStart = document.getElementById('message-start');
-    const messageEnd = document.getElementById('message-end');
-    const messageTotal = document.getElementById('message-total');
-    const messageDetailModal = document.getElementById('message-detail-modal');
-    const messageDetailContent = document.getElementById('message-detail-content');
-    const closeMessageDetail = document.getElementById('close-message-detail');
-
-    // Tab切换逻辑扩展
+     // Tab切换逻辑扩展
     const tabMapExt = [
       {tab: tabDashboard, section: dashboardSection, title: 'Dashboard', async: false},
       {tab: tabUsers, section: userSection, title: '用户管理', async: false},
@@ -1319,7 +1271,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (tabMapExt[idx].section) tabMapExt[idx].section.style.display = 'block';
       document.getElementById('pageTitle').innerText = tabMapExt[idx].title;
       if (tabMapExt[idx].async && idx === 3) {
-        loadMessages();
+        // 消息管理由 message.js 处理，这里不需要调用 loadMessages
+        // loadMessages();
       } else if (tabMapExt[idx].async && idx === 5) {
         loadUsersForLogs().then(renderLoginLogs);
       } else if (tabMapExt[idx].async && idx === 6) {
@@ -1491,7 +1444,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {
         resultDiv.style.color = '#e53e3e';
         resultDiv.textContent = '测试发送失败：' + e.message;
-        console.error('测试发送异常：', e);
+
       }
     };
 
@@ -1682,7 +1635,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               this.style.background = 'linear-gradient(135deg, var(--accent), var(--accent2))';
             }, 1000);
           }).catch(err => {
-            console.error('复制失败:', err);
+
             alert('复制失败，请手动复制');
           });
         });
@@ -1811,15 +1764,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         defaultDate: formatDate(today)
     });
 
-    // 让消息接收人多选容器可点击聚焦
-    const msgMultiSelect = document.getElementById('message-to-user-multiselect');
-    if (msgMultiSelect) {
-      msgMultiSelect.addEventListener('click', function(e) {
-        // 避免点击input本身时重复focus
-        if (e.target.tagName.toLowerCase() === 'input') return;
-        const input = this.querySelector('input, textarea, select');
-        if (input) input.focus();
-      });
-      msgMultiSelect.style.cursor = 'text';
-    }
 });
+

@@ -251,9 +251,43 @@ router.get('/messages', authMiddleware, async (req, res) => {
         { toUserId: null }
       ]
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      fromUser: { select: { id: true, name: true, email: true } }
+    }
   });
-  res.json(messages);
+  const result = messages.map(msg => ({
+    ...msg,
+    fromUserName: msg.fromUser ? msg.fromUser.name : '',
+    fromUserEmail: msg.fromUser ? msg.fromUser.email : ''
+  }));
+  res.json(result);
+});
+
+// 获取单个消息详情
+router.get('/messages/:id', authMiddleware, async (req, res) => {
+  const id = Number(req.params.id);
+  const userId = req.user.id;
+  
+  // 查找消息，联表查发件人
+  const msg = await prisma.message.findUnique({
+    where: { id },
+    include: { fromUser: { select: { id: true, name: true, email: true } } }
+  });
+  if (!msg) {
+    return res.status(404).json({ message: '消息不存在' });
+  }
+  
+  // 检查权限：只能查看发给自己的消息或全体用户消息
+  if (msg.toUserId && msg.toUserId !== userId) {
+    return res.status(403).json({ message: '无权查看此消息' });
+  }
+  
+  res.json({
+    ...msg,
+    fromUserName: msg.fromUser ? msg.fromUser.name : '',
+    fromUserEmail: msg.fromUser ? msg.fromUser.email : ''
+  });
 });
 
 // 标记消息为已读

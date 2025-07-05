@@ -1,4 +1,4 @@
-console.log('change-password.js loaded');
+
 // 通用修改密码模块，兼容admin和portal页面
 (function(){
   const changePwdBtn = document.getElementById('change-password-btn');
@@ -6,8 +6,7 @@ console.log('change-password.js loaded');
   const changePwdForm = document.getElementById('change-password-form');
   const changePwdError = document.getElementById('change-password-error');
   const cancelChangePwd = document.getElementById('cancel-change-password-modal');
-  console.log('changePwdBtn:', changePwdBtn, 'changePwdModal:', changePwdModal, 'changePwdForm:', changePwdForm);
-  if (!changePwdBtn || !changePwdModal || !changePwdForm) return;
+   if (!changePwdBtn || !changePwdModal || !changePwdForm) return;
   changePwdBtn.onclick = function() {
     changePwdModal.style.display = 'flex';
     document.getElementById('old-password').focus();

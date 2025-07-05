@@ -1,158 +1,182 @@
-let messageSearchTerm = '';
 // 消息中心通用模块，兼容admin和portal页面
 (function(){
-    // ========== 通用部分 ==========
-    function getToken() {
-      return localStorage.getItem('jwt_token');
+  // admin页面
+  const adminMsgModal = document.getElementById('send-message-modal') || document.getElementById('message-center-section');
+  const adminMsgTableBody = document.querySelector('#message-table tbody');
+  const adminMsgSendForm = document.getElementById('send-message-form');
+  const adminMsgTip = document.getElementById('send-message-tip');
+  // portal页面
+  const portalMsgModal = document.getElementById('portal-msg-modal');
+  const portalMsgListDiv = document.getElementById('portal-msg-list');
+  const portalMsgSendBtn = document.getElementById('portal-msg-send-btn');
+  const portalMsgSendModal = document.getElementById('portal-msg-send-modal');
+  const portalMsgSendForm = document.getElementById('portal-msg-send-form');
+  const portalMsgSendTip = document.getElementById('portal-msg-send-tip');
+  const portalMsgSendCancel = document.getElementById('portal-msg-send-cancel');
+  const portalMsgDetailModal = document.getElementById('portal-msg-detail-modal');
+  const portalMsgDetailContent = document.getElementById('portal-msg-detail-content');
+  const portalMsgDetailClose = document.getElementById('portal-msg-detail-close');
+  const portalMsgClose = document.getElementById('portal-msg-close');
+  const portalMsgBell = document.getElementById('portal-msg-bell');
+  const portalMsgDot = document.getElementById('portal-msg-dot');
+
+  // 判断当前页面类型
+  const isPortal = !!portalMsgModal;
+  const isAdmin = !!adminMsgModal;
+
+  // 获取token
+  function getToken() {
+    return localStorage.getItem('jwt_token');
+  }
+
+  // 公共API请求
+  async function apiFetch(url, options = {}) {
+    const token = getToken();
+    const headers = { 'Authorization': `Bearer ${token}`, ...(options.headers||{}) };
+    const response = await fetch(url, { ...options, headers });
+    if (!response.ok) throw new Error('请求失败');
+    return response.json();
+  }
+
+  // ========== Portal 消息中心 ==========
+  if (isPortal) {
+    let portalMsgList = [];
+    let portalMsgUnread = false;
+    // 加载消息
+    async function loadPortalMessages() {
+      try {
+        const res = await fetch('/api/users/messages', { headers: { Authorization: 'Bearer ' + getToken() } });
+        portalMsgList = await res.json();
+        portalMsgUnread = portalMsgList.some(m => !m.isRead);
+        if (portalMsgDot) portalMsgDot.style.display = portalMsgUnread ? 'block' : 'none';
+        renderPortalMsgList();
+      } catch {}
     }
-    async function apiFetch(url, options = {}) {
-      const token = getToken();
-      const headers = { 'Authorization': `Bearer ${token}`, ...(options.headers||{}) };
-      const response = await fetch(url, { ...options, headers });
-      if (!response.ok) throw new Error('请求失败');
-      return response.json();
+    function renderPortalMsgList() {
+      if (!portalMsgListDiv) return;
+      if (!portalMsgList.length) {
+        portalMsgListDiv.innerHTML = '<div style="color:#888;text-align:center;padding:2em 0;">暂无消息</div>';
+        return;
+      }
+      portalMsgListDiv.innerHTML = `<table class="portal-msg-table">
+        <thead><tr><th style='width:2.5em;'></th><th style='min-width:80px;'>标题</th><th style='min-width:120px;max-width:180px;'>时间</th><th style='width:70px;'>状态</th><th style='width:120px;'>操作</th></tr></thead><tbody>` +
+        portalMsgList.map(msg => {
+          return `<tr style="background:${msg.isRead ? '#fff' : '#f0f6ff'};box-shadow:0 1px 4px #e5e7eb;">
+            <td style='text-align:center;'><i class="fa fa-envelope${msg.isRead ? '' : '-o'}" style="color:${msg.isRead ? '#48bb78' : '#ed8936'};"></i></td>
+            <td style='max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;'>${msg.title}</td>
+            <td style='color:#888;font-size:0.97em;'>${new Date(msg.createdAt).toLocaleString()}</td>
+            <td>${msg.isRead ? '<span style=\"color:#48bb78;\">已读</span>' : '<span style=\"color:#ed8936;\">未读</span>'}</td>
+            <td>
+              <button class="btn btn-secondary" onclick="window.showPortalMsgDetail(${msg.id})">详情</button>
+              ${!msg.isRead ? `<button class=\"btn btn-primary\" onclick=\"window.markPortalMsgRead(${msg.id})\">已读</button>` : ''}
+              <button class="btn btn-danger" onclick="window.deletePortalMsg(${msg.id})">删除</button>
+            </td>
+          </tr>`;
+        }).join('') + '</tbody></table>';
     }
-    const portalMsgModal = document.getElementById('portal-msg-modal');
-    const isPortal = !!portalMsgModal;
-    const adminMsgModal = document.getElementById('send-message-modal') || document.getElementById('message-center-section');
-    const isAdmin = !!adminMsgModal;
-  
-    // ========== Portal 消息中心 ==========
-    if (isPortal) {
-      let portalMsgList = [];
-      let portalMsgUnread = false;
-      const portalMsgListDiv = document.getElementById('portal-msg-list');
-      const portalMsgSendBtn = document.getElementById('portal-msg-send-btn');
-      const portalMsgSendModal = document.getElementById('portal-msg-send-modal');
-      const portalMsgSendForm = document.getElementById('portal-msg-send-form');
-      const portalMsgSendTip = document.getElementById('portal-msg-send-tip');
-      const portalMsgSendCancel = document.getElementById('portal-msg-send-cancel');
-      const portalMsgDetailModal = document.getElementById('portal-msg-detail-modal');
-      const portalMsgDetailContent = document.getElementById('portal-msg-detail-content');
-      const portalMsgDetailClose = document.getElementById('portal-msg-detail-close');
-      const portalMsgClose = document.getElementById('portal-msg-close');
-      const portalMsgBell = document.getElementById('portal-msg-bell');
-      const portalMsgDot = document.getElementById('portal-msg-dot');
-  
-      async function loadPortalMessages() {
-        try {
-          const res = await fetch('/api/users/messages', { headers: { Authorization: 'Bearer ' + getToken() } });
-          portalMsgList = await res.json();
-          portalMsgUnread = portalMsgList.some(m => !m.isRead);
-          if (portalMsgDot) portalMsgDot.style.display = portalMsgUnread ? 'block' : 'none';
-          renderPortalMsgList();
-        } catch {}
-      }
-      function renderPortalMsgList() {
-        if (!portalMsgListDiv) return;
-        if (!portalMsgList.length) {
-          portalMsgListDiv.innerHTML = '<div style="color:#888;text-align:center;padding:2em 0;">暂无消息</div>';
-          return;
-        }
-        portalMsgListDiv.innerHTML = `<table class="portal-msg-table">
-          <thead><tr><th></th><th>标题</th><th>时间</th><th>状态</th><th>操作</th></tr></thead><tbody>` +
-          portalMsgList.map(msg => {
-            return `<tr style="background:${msg.isRead ? '#fff' : '#f0f6ff'};">
-              <td style='text-align:center;'><i class="fa fa-envelope${msg.isRead ? '' : '-o'}" style="color:${msg.isRead ? '#48bb78' : '#ed8936'};"></i></td>
-              <td>${msg.title}</td>
-              <td>${new Date(msg.createdAt).toLocaleString()}</td>
-              <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
-              <td>
-                <button class="btn btn-secondary" onclick="window.showPortalMsgDetail(${msg.id})">详情</button>
-                ${!msg.isRead ? `<button class="btn btn-primary" onclick="window.markPortalMsgRead(${msg.id})">已读</button>` : ''}
-                <button class="btn btn-danger" onclick="window.deletePortalMsg(${msg.id})">删除</button>
-              </td>
-            </tr>`;
-          }).join('') + '</tbody></table>';
-      }
-      if (portalMsgBell) portalMsgBell.onclick = function(e) {
-        e.stopPropagation();
-        portalMsgModal.style.display = 'flex';
-        loadPortalMessages();
+    // bell点击弹窗
+    if (portalMsgBell) portalMsgBell.onclick = function(e) {
+      e.stopPropagation();
+      portalMsgModal.style.display = 'flex';
+      loadPortalMessages();
+    };
+    if (portalMsgClose) portalMsgClose.onclick = function() {
+      portalMsgModal.style.display = 'none';
+    };
+    // 发送消息弹窗
+    if (portalMsgSendBtn) portalMsgSendBtn.onclick = function() {
+      portalMsgSendModal.style.display = 'flex';
+      portalMsgSendForm.reset();
+      portalMsgSendTip.style.display = 'none';
+    };
+    if (portalMsgSendCancel) portalMsgSendCancel.onclick = function() {
+      portalMsgSendModal.style.display = 'none';
+    };
+    if (portalMsgSendForm) portalMsgSendForm.onsubmit = async function(e) {
+      e.preventDefault();
+      const form = new FormData(portalMsgSendForm);
+      const data = {
+        title: form.get('title'),
+        content: form.get('content'),
+        toUserIds: [''] // 后端约定：空字符串为管理员
       };
-      if (portalMsgClose) portalMsgClose.onclick = function() {
-        portalMsgModal.style.display = 'none';
-      };
-      if (portalMsgSendBtn) portalMsgSendBtn.onclick = function() {
-        portalMsgSendModal.style.display = 'flex';
-        portalMsgSendForm.reset();
-        portalMsgSendTip.style.display = 'none';
-      };
-      if (portalMsgSendCancel) portalMsgSendCancel.onclick = function() {
-        portalMsgSendModal.style.display = 'none';
-      };
-      if (portalMsgSendForm) portalMsgSendForm.onsubmit = async function(e) {
-        e.preventDefault();
-        const form = new FormData(portalMsgSendForm);
-        const data = {
-          title: form.get('title'),
-          content: form.get('content'),
-          toUserIds: ['']
-        };
-        try {
-          const res = await fetch('/api/users/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
-            body: JSON.stringify(data)
-          });
-          const result = await res.json();
-          if (result.success) {
-            portalMsgSendTip.textContent = '发送成功！';
-            portalMsgSendTip.style.display = 'block';
-            setTimeout(() => {
-              portalMsgSendModal.style.display = 'none';
-              portalMsgSendForm.reset();
-              portalMsgSendTip.style.display = 'none';
-              loadPortalMessages();
-            }, 1200);
-          } else {
-            portalMsgSendTip.textContent = result.message || '发送失败';
-            portalMsgSendTip.style.display = 'block';
-          }
-        } catch {
-          portalMsgSendTip.textContent = '发送失败';
+      try {
+        const res = await fetch('/api/users/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + getToken() },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) {
+          portalMsgSendTip.textContent = '发送成功！';
+          portalMsgSendTip.style.display = 'block';
+          setTimeout(() => {
+            portalMsgSendModal.style.display = 'none';
+            portalMsgSendForm.reset();
+            portalMsgSendTip.style.display = 'none';
+            loadPortalMessages();
+          }, 1200);
+        } else {
+          portalMsgSendTip.textContent = result.message || '发送失败';
           portalMsgSendTip.style.display = 'block';
         }
-      };
-      window.showPortalMsgDetail = function(id) {
-        const msg = portalMsgList.find(m => m.id === id);
-        if (!msg) return;
-        let sender = msg.fromUserName || msg.fromUserEmail || msg.fromUserId;
-        portalMsgDetailContent.innerHTML = `
-          <div class='portal-msg-detail-content'>
-            <div class='msg-meta'>
-              <div class='sender'><b>发送人：</b>${sender || '系统'}</div>
-              <div class='time'><i class='fa fa-clock-o'></i> ${new Date(msg.createdAt).toLocaleString()}</div>
-            </div>
-            <div class='msg-title'><b>标题：</b><span>${msg.title}</span></div>
-            <div class='msg-content-label'><b>内容：</b></div>
-            <div class='msg-content-box'>${msg.content}</div>
+      } catch {
+        portalMsgSendTip.textContent = '发送失败';
+        portalMsgSendTip.style.display = 'block';
+      }
+    };
+    // 消息详情
+    window.showPortalMsgDetail = function(id) {
+      const msg = portalMsgList.find(m => m.id === id);
+      if (!msg) return;
+      let sender = msg.fromUserName || msg.fromUserEmail || msg.fromUserId;
+      portalMsgDetailContent.innerHTML = `
+        <div class='portal-msg-detail-content'>
+          <div class='msg-meta'>
+            <div class='sender'><b>发送人：</b>${sender || '系统'}</div>
+            <div class='time'><i class='fa fa-clock-o'></i> ${new Date(msg.createdAt).toLocaleString()}</div>
           </div>
-        `;
-        portalMsgDetailModal.style.display = 'flex';
-        if (!msg.isRead) window.markPortalMsgRead(id);
-      };
-      if (portalMsgDetailClose) portalMsgDetailClose.onclick = function() {
-        portalMsgDetailModal.style.display = 'none';
-      };
-      window.markPortalMsgRead = async function(id) {
-        await fetch(`/api/users/messages/${id}/read`, { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
-        await loadPortalMessages();
-      };
-      window.deletePortalMsg = async function(id) {
-        if (!confirm('确定要删除这条消息吗？')) return;
-        await fetch(`/api/users/messages/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken() } });
-        await loadPortalMessages();
-      };
-      [portalMsgModal, portalMsgSendModal, portalMsgDetailModal].forEach(modal => {
-        if (modal) modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
-      });
-      setInterval(loadPortalMessages, 60000);
-      loadPortalMessages();
-    }
-  
+          <div class='msg-title'><b>标题：</b><span>${msg.title}</span></div>
+          <div class='msg-content-label'><b>内容：</b></div>
+          <div class='msg-content-box'>${msg.content}</div>
+        </div>
+      `;
+      portalMsgDetailModal.style.display = 'flex';
+      if (!msg.isRead) window.markPortalMsgRead(id);
+    };
+    if (portalMsgDetailClose) portalMsgDetailClose.onclick = function() {
+      portalMsgDetailModal.style.display = 'none';
+    };
+    // 标记已读
+    window.markPortalMsgRead = async function(id) {
+      await fetch(`/api/users/messages/${id}/read`, { method: 'POST', headers: { Authorization: 'Bearer ' + getToken() } });
+      await loadPortalMessages();
+    };
+    // 删除
+    window.deletePortalMsg = async function(id) {
+      if (!confirm('确定要删除这条消息吗？')) return;
+      await fetch(`/api/users/messages/${id}`, { method: 'DELETE', headers: { Authorization: 'Bearer ' + getToken() } });
+      await loadPortalMessages();
+    };
+    // 点击弹窗外部关闭
+    [portalMsgModal, portalMsgSendModal, portalMsgDetailModal].forEach(modal => {
+      if (modal) modal.onclick = function(e) { if (e.target === modal) modal.style.display = 'none'; };
+    });
+    // 页面加载时轮询未读消息
+    setInterval(loadPortalMessages, 60000);
+    loadPortalMessages();
+    // 加载所有用户用于消息详情显示
+    window.allUsersForMsg = [];
+    (async function(){
+      try {
+        const res = await fetch('/api/users', { headers: { Authorization: 'Bearer ' + getToken() } });
+        if(res.ok) window.allUsersForMsg = await res.json();
+      } catch{}
+    })();
+  }
+
   // ========== Admin 消息中心 ==========
-if (isAdmin) {
+  if (isAdmin) {
     // 变量定义
     let allUsers = [];
     let allUserOptions = [];
@@ -188,32 +212,14 @@ if (isAdmin) {
     const replyModal = document.getElementById('reply-modal');
     const replyCancel = document.getElementById('reply-cancel');
     const replyForm = document.getElementById('reply-form');
-  
     // 加载所有用户
     async function loadAllUsers() {
       allUserOptions = [{id: '', name: '全体用户'}];
-      try {
-        // 如果全局已有 allUsers，直接使用
-        if (typeof window.allUsers !== 'undefined' && window.allUsers && window.allUsers.length > 0) {
-          console.log('使用全局 allUsers:', window.allUsers);
-          allUsers = window.allUsers;
-        } else {
-          const res = await apiFetch('/api/users');
-          console.log('apiFetch /api/users 返回：', res);
-          allUsers = res;
-          // 设置全局 allUsers，供其他模块使用
-          window.allUsers = allUsers;
-        }
-        allUsers.forEach(u => {
-          allUserOptions.push({id: String(u.id), name: u.name || u.email, email: u.email});
-        });
-      } catch (e) {
-        console.error('加载用户失败', e);
-        allUsers = [];
-      }
-      console.log('最终 allUsers:', allUsers);
+      allUsers = await apiFetch('/api/users');
+      allUsers.forEach(u => {
+        allUserOptions.push({id: String(u.id), name: u.name || u.email, email: u.email});
+      });
     }
-  
     // 多选下拉渲染
     function renderMultiSelect(selected = [], filter = '') {
       multiSelectContainer.innerHTML = '';
@@ -236,16 +242,25 @@ if (isAdmin) {
       multiSelectInput.placeholder = selected.length === 0 ? '选择接收人（可多选）' : '';
       multiSelectInput.autocomplete = 'off';
       multiSelectInput.oninput = () => { 
+        // 只在有输入内容时才更新下拉内容，但不自动显示
         if (multiSelectInput.value.trim()) {
           renderDropdown(multiSelectInput.value.trim());
+          // 如果下拉菜单当前是显示的，则保持显示；否则不显示
           if (multiSelectDropdown && multiSelectDropdown.style.display === 'block') {
             multiSelectDropdown.style.display = 'block';
           }
         }
       };
-      multiSelectInput.onfocus = () => {};
-      multiSelectInput.onclick = (e) => { e.stopPropagation(); };
+      multiSelectInput.onfocus = () => { 
+        // 聚焦时不自动弹出下拉
+        // 只有点击容器时才弹出
+      };
+      multiSelectInput.onclick = (e) => { 
+        // 点击输入框时不弹出下拉
+        e.stopPropagation(); 
+      };
       multiSelectContainer.appendChild(multiSelectInput);
+      // 初始化时不显示下拉菜单
       renderDropdown(filter);
       if (multiSelectDropdown) {
         multiSelectDropdown.style.display = 'none';
@@ -288,6 +303,7 @@ if (isAdmin) {
         empty.textContent = '无匹配用户';
         multiSelectDropdown.appendChild(empty);
       }
+      // 默认不显示下拉菜单，只有在点击容器时才显示
       multiSelectDropdown.style.display = 'none';
       multiSelectContainer.appendChild(multiSelectDropdown);
     }
@@ -304,6 +320,7 @@ if (isAdmin) {
       if (multiSelectDropdown) multiSelectDropdown.style.display = 'none';
     });
     multiSelectContainer.onclick = function(e) {
+      // 只有点击容器时才弹出下拉菜单
       if (multiSelectDropdown) {
         multiSelectDropdown.style.display = 'block';
         multiSelectDropdown.classList.add('open');
@@ -325,15 +342,10 @@ if (isAdmin) {
     sendMsgForm.onsubmit = async function(e) {
       e.preventDefault();
       const form = new FormData(sendMsgForm);
-      console.log('multiSelectHidden.value', multiSelectHidden.value); // 调试输出
       let toUserIds = [];
       try { toUserIds = JSON.parse(multiSelectHidden.value); } catch { toUserIds = []; }
-      console.log('toUserIds', toUserIds); // 调试输出
       if (toUserIds && toUserIds.includes('')) toUserIds = [''];
-      // 只传有效id
-      toUserIds = toUserIds.filter(id => id !== null && id !== undefined && id !== '');
       const data = { title: form.get('title'), content: form.get('content'), toUserIds };
-      console.log('发送数据', data); // 调试输出
       const res = await apiFetch('/api/users/messages', { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
       if (res.success) {
         sendMsgTip.textContent = '发送成功！';
@@ -353,13 +365,12 @@ if (isAdmin) {
     };
     // 消息加载与渲染
     async function loadMessages() {
-      await loadAllUsers();
+      await loadAllUsers(); // 确保先加载用户
       const res = await apiFetch('/api/users/messages');
       messagePagination.messages = res;
       renderMessages();
     }
     window.loadMessages = loadMessages;
-  
     function renderMessages() {
       const startIndex = (messagePagination.currentPage - 1) * messagePagination.pageSize;
       const endIndex = startIndex + messagePagination.pageSize;
@@ -367,7 +378,7 @@ if (isAdmin) {
       if (messageSearchTerm) {
         const term = messageSearchTerm.toLowerCase();
         filtered = filtered.filter(msg => {
-          const user = allUsers.find(u => String(u.id) === String(msg.fromUserId)) || {};
+          const user = allUsers.find(u => u.id === msg.fromUserId) || {};
           return (user.name && user.name.toLowerCase().includes(term)) ||
                  (user.email && user.email.toLowerCase().includes(term)) ||
                  (msg.title && msg.title.toLowerCase().includes(term)) ||
@@ -380,25 +391,14 @@ if (isAdmin) {
       messageEnd.textContent = Math.min(endIndex, messagePagination.total);
       messageTotal.textContent = messagePagination.total;
       messageTableBody.innerHTML = paginated.map((msg, idx) => {
-        let sender = msg.fromUserName || msg.fromUserEmail || msg.fromUserId;
-        let receiver = '全体用户';
-        if (Array.isArray(msg.toUserIds) && msg.toUserIds.length > 0) {
-          receiver = msg.toUserIds.map(uid => {
-            const u = allUsers.find(u => String(u.id) === String(uid));
-            return u ? (u.name || u.email) : uid;
-          }).join(', ');
-        } else if (msg.toUserId != null) {
-          const u = allUsers.find(u => String(u.id) === String(msg.toUserId));
-          receiver = u ? (u.name || u.email) : msg.toUserId;
-        }
+        const user = allUsers.find(u => u.id === msg.fromUserId);
         const checked = selectedMsgIds.includes(msg.id) ? 'checked' : '';
         return `<tr>
           <td><input type="checkbox" class="message-check" data-id="${msg.id}" ${checked}></td>
           <td>${startIndex + idx + 1}</td>
-          <td>${sender}</td>
-          <td>${receiver}</td>
+          <td>${user ? (user.name || user.email) : (msg.fromUserId ? msg.fromUserId : '系统')}</td>
           <td>${msg.title}</td>
-          <td>${msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content}</td>
+          <td>${msg.content}</td>
           <td>${new Date(msg.createdAt).toLocaleString()}</td>
           <td>${msg.isRead ? '<span style="color:#48bb78;">已读</span>' : '<span style="color:#ed8936;">未读</span>'}</td>
           <td>
@@ -423,7 +423,6 @@ if (isAdmin) {
         };
       });
       updateCheckAllBox();
-      updateBatchBtns();
     }
     function updateMessagePagination() {
       const totalPages = Math.ceil(messagePagination.total / messagePagination.pageSize);
@@ -516,7 +515,7 @@ if (isAdmin) {
       let sender = msg.fromUserName || msg.fromUserEmail || msg.fromUserId;
       let senderName = sender;
       if (msg.fromUserId && allUsers) {
-        const u = allUsers.find(u => String(u.id) === String(msg.fromUserId));
+        const u = allUsers.find(u => u.id === msg.fromUserId);
         if (u) senderName = u.name || u.email;
       }
       replyModal.style.display = 'flex';
@@ -586,4 +585,4 @@ if (isAdmin) {
     // 初始化
     loadMessages();
   }
-  })();
+})(); 
