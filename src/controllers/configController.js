@@ -63,19 +63,23 @@ async function testMail(req, res) {
 }
 // 微信公众号配置测试
 async function testWechat(req, res) {
-  const { appid, secret } = req.body;
-  if (!appid || !secret) return res.status(400).json({ message: '参数不完整' });
+  const { appid, secret, token, aeskey } = req.body;
+  if (!appid || !secret) return res.status(400).json({ message: 'AppID和AppSecret是必需的' });
   try {
     // 获取access_token
     const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appid}&secret=${secret}`;
     const wxRes = await axios.get(url);
+    
     if (wxRes.data.access_token) {
-      res.json({ success: true });
+      res.json({ success: true, message: '微信公众号配置测试成功' });
     } else {
-      res.status(400).json({ message: wxRes.data.errmsg || '微信接口返回异常' });
+      const errorMsg = wxRes.data.errmsg || '微信接口返回异常';
+      console.error('微信API错误:', wxRes.data);
+      res.status(400).json({ message: `微信API错误: ${errorMsg}` });
     }
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    console.error('微信公众号测试异常:', e);
+    res.status(500).json({ message: `测试失败: ${e.message}` });
   }
 }
 

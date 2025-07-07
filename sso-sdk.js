@@ -35,6 +35,8 @@
     })();
 
     // === 1. 自动写入token到localStorage ===
+    // 注释掉自动处理URL token的逻辑，避免覆盖localStorage中的token
+    /*
     (function autoSetToken() {
         var params = new URLSearchParams(window.location.search);
         var token = params.get('token');
@@ -45,6 +47,7 @@
             window.history.replaceState({}, document.title, newUrl);
         }
     })();
+    */
 
     // === SSO SDK 浮窗插入到 <html>，不依赖 body ===
     (function injectFloatBoxToHtml() {

@@ -485,7 +485,7 @@ main {
   }
 }
 
-/* 滚动条美化 */
+/* 合并后的滚动条美化 */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -502,6 +502,73 @@ main {
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+/* 合并后的动画 keyframes */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* 合并后的按钮样式 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--accent2), var(--accent));
+}
+
+.btn-secondary {
+  background: #f7faff;
+  color: var(--accent);
+  border: 1px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+  background: #e6edfa;
+  color: var(--accent2);
+}
+
+/* 合并后的卡片和弹窗样式 */
+.app-card, .header, .empty-state, .loading-container {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* 合并后的弹窗内容样式 */
+#portal-msg-modal .modal-content,
+#portal-msg-send-modal .modal-content,
+#portal-msg-detail-modal .modal-content {
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(102,126,234,0.18);
+  background: var(--card-bg);
+  border: 1px solid rgba(102,126,234,0.08);
+  min-width: 340px;
+  max-width: 700px;
 }
 
 /* 消息中心表格样式 */
@@ -531,16 +598,6 @@ main {
 }
 
 /* 美化消息弹窗相关样式，风格与主站一致 */
-#portal-msg-modal .modal-content,
-#portal-msg-send-modal .modal-content,
-#portal-msg-detail-modal .modal-content {
-  border-radius: var(--radius);
-  box-shadow: 0 8px 32px rgba(102,126,234,0.18);
-  background: var(--card-bg);
-  border: 1px solid rgba(102,126,234,0.08);
-  min-width: 340px;
-  max-width: 700px;
-}
 #portal-msg-modal .modal-title,
 #portal-msg-send-modal .modal-title,
 #portal-msg-detail-modal .modal-title {

@@ -415,7 +415,7 @@ table tbody tr:hover {
   margin-bottom: 2rem;
   position: relative;
   z-index: 10;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 
@@ -798,22 +798,43 @@ table tbody tr:hover {
 }
 
 /* 重置密码弹窗特殊样式 */
-#reset-password-modal {
-  z-index: 3000 !important;
+#reset-password-modal,
+#reset-password-modal.modal {
+  z-index: 99999 !important;
+  position: fixed !important;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0,0,0,0.08); /* 可选：半透明遮罩 */
 }
-
+#reset-password-modal.show,
+#reset-password-modal.modal.show {
+  display: flex !important;
+}
+#reset-password-modal .modal-content {
+  margin: auto;
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.18), 0 4px 16px rgba(118, 75, 162, 0.10);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
 #reset-password-modal .modal-title {
   color: var(--danger);
   border-bottom: 2px solid rgba(245, 101, 101, 0.2);
   padding-bottom: 0.8rem;
   margin-bottom: 1.5rem;
 }
-
 #reset-password-modal .modal-subtitle {
   color: var(--muted);
   font-style: italic;
 }
-
 #reset-password-modal div[style*="background: #fef2f2"] {
   background: linear-gradient(135deg, rgba(245, 101, 101, 0.05), rgba(229, 62, 62, 0.05)) !important;
   border: 1px solid rgba(245, 101, 101, 0.2) !important;
@@ -823,44 +844,27 @@ table tbody tr:hover {
   font-size: 0.9rem !important;
   color: var(--danger) !important;
 }
-
 #reset-password-modal .form-group {
   border: 1px solid rgba(245, 101, 101, 0.2);
   background: rgba(254, 242, 242, 0.5);
 }
-
 #reset-password-modal .form-group:focus-within {
   border-color: var(--danger);
   background: white;
   box-shadow: 0 4px 16px rgba(245, 101, 101, 0.2);
 }
-
 #reset-password-modal .form-group label {
   color: var(--danger);
 }
-
 #reset-password-modal .btn-primary {
   background: linear-gradient(135deg, var(--danger), #e53e3e);
   color: white;
   box-shadow: 0 4px 16px rgba(245, 101, 101, 0.3);
 }
-
 #reset-password-modal .btn-primary:hover {
   background: linear-gradient(135deg, #e53e3e, var(--danger));
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(245, 101, 101, 0.4);
-}
-
-/* 表单错误提示样式 */
-.form-error {
-  background: linear-gradient(135deg, rgba(245, 101, 101, 0.1), rgba(229, 62, 62, 0.1));
-  border: 1px solid rgba(245, 101, 101, 0.3);
-  border-radius: var(--radius);
-  padding: 0.8rem 1rem;
-  margin-bottom: 1rem;
-  color: var(--danger);
-  font-size: 0.9rem;
-  font-weight: 500;
 }
 
 /* 状态标签样式 */
@@ -882,14 +886,20 @@ table tbody tr:hover {
   font-weight: 600;
 }
 
-/* 加载动画 */
+/* 合并后的 loading 样式 */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-.loading {
-  animation: spin 1s linear infinite;
 }
 
 /* 页面切换动画 */
@@ -922,8 +932,13 @@ section {
 }
 
 /* 用户编辑弹窗特殊样式 */
+#user-edit-modal .modal {
+  z-index: 3000 !important;
+}
+
 #user-edit-modal .modal-content {
-  max-width: 500px !important;
+  z-index: 3001 !important;
+  position: relative;
 }
 
 #user-edit-modal .form-group input[readonly] {
@@ -993,15 +1008,19 @@ section {
   gap: 0.8rem !important;
 }
 
-/* 分页按钮样式 */
-.btn:disabled {
+/* 合并后的按钮禁用样式 */
+.btn:disabled,
+.btn:disabled:hover {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
 
-.btn:disabled:hover {
+/* 分页按钮样式 */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -1065,9 +1084,12 @@ section {
   line-height: 1.2;
 }
 
-#reset-password-modal .modal-content {
-  z-index: 3001 !important;
-  position: relative;
+#reset-password-modal .modal {
+  z-index: 4000 !important;
+}
+
+#user-edit-modal .modal {
+  z-index: 3000 !important;
 }
 
 /* 统一 input/textarea/多选输入框样式 —— 已全部以components/form.css为准，原内容已删除 */
@@ -1303,4 +1325,11 @@ input.flatpickr-input {
 }
 .permission-item input[type="checkbox"]:checked + label {
   color: var(--accent, #667eea);
+}
+
+#reset-password-modal .modal-backdrop {
+  z-index: 3999 !important;
+}
+#user-edit-modal .modal-backdrop {
+  z-index: 2999 !important;
 } 

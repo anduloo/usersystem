@@ -195,11 +195,9 @@ if (isAdmin) {
       try {
         // 如果全局已有 allUsers，直接使用
         if (typeof window.allUsers !== 'undefined' && window.allUsers && window.allUsers.length > 0) {
-          console.log('使用全局 allUsers:', window.allUsers);
           allUsers = window.allUsers;
         } else {
           const res = await apiFetch('/api/users');
-          console.log('apiFetch /api/users 返回：', res);
           allUsers = res;
           // 设置全局 allUsers，供其他模块使用
           window.allUsers = allUsers;
@@ -211,7 +209,6 @@ if (isAdmin) {
         console.error('加载用户失败', e);
         allUsers = [];
       }
-      console.log('最终 allUsers:', allUsers);
     }
   
     // 多选下拉渲染
@@ -236,14 +233,13 @@ if (isAdmin) {
       multiSelectInput.placeholder = selected.length === 0 ? '选择接收人（可多选）' : '';
       multiSelectInput.autocomplete = 'off';
       multiSelectInput.oninput = () => { 
-        if (multiSelectInput.value.trim()) {
-          renderDropdown(multiSelectInput.value.trim());
-          if (multiSelectDropdown && multiSelectDropdown.style.display === 'block') {
-            multiSelectDropdown.style.display = 'block';
-          }
-        }
+        renderDropdown(multiSelectInput.value.trim());
+        if (multiSelectDropdown) multiSelectDropdown.style.display = 'block';
       };
-      multiSelectInput.onfocus = () => {};
+      multiSelectInput.onfocus = () => {
+        renderDropdown(multiSelectInput.value.trim());
+        if (multiSelectDropdown) multiSelectDropdown.style.display = 'block';
+      };
       multiSelectInput.onclick = (e) => { e.stopPropagation(); };
       multiSelectContainer.appendChild(multiSelectInput);
       renderDropdown(filter);
@@ -319,21 +315,24 @@ if (isAdmin) {
       selectedUserIds = [];
       updateMultiSelect();
       sendMsgModal.style.display = 'flex';
-      setTimeout(() => { multiSelectInput && multiSelectInput.focus(); }, 100);
     };
+    // 绑定取消按钮关闭弹窗
+    const sendMsgCancel = document.getElementById('cancel-send-message');
+    if (sendMsgCancel) {
+      sendMsgCancel.onclick = function() {
+        sendMsgModal.style.display = 'none';
+      };
+    }
     // 发送消息表单
     sendMsgForm.onsubmit = async function(e) {
       e.preventDefault();
       const form = new FormData(sendMsgForm);
-      console.log('multiSelectHidden.value', multiSelectHidden.value); // 调试输出
       let toUserIds = [];
       try { toUserIds = JSON.parse(multiSelectHidden.value); } catch { toUserIds = []; }
-      console.log('toUserIds', toUserIds); // 调试输出
       if (toUserIds && toUserIds.includes('')) toUserIds = [''];
       // 只传有效id
       toUserIds = toUserIds.filter(id => id !== null && id !== undefined && id !== '');
       const data = { title: form.get('title'), content: form.get('content'), toUserIds };
-      console.log('发送数据', data); // 调试输出
       const res = await apiFetch('/api/users/messages', { method: 'POST', body: JSON.stringify(data), headers: { 'Content-Type': 'application/json' } });
       if (res.success) {
         sendMsgTip.textContent = '发送成功！';

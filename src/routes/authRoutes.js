@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, showPortal, getPortalData, confirmEmail, requestResetPassword, resetPassword, verifyResetToken } = require('../controllers/authController');
+const { register, login, showPortal, getPortalData, confirmEmail, requestResetPassword, resetPassword, verifyResetToken, generateWechatQR, handleWechatCallback, checkWechatLoginStatus, bindWechatUserInfo } = require('../controllers/authController');
 const { 
   renderLoginPage, 
   renderAdminPage,
-  renderResetPasswordPage
+  renderResetPasswordPage,
+  renderWechatConfirmPage
 } = require('../controllers/pagesController');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
@@ -19,12 +20,19 @@ router.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// === 微信登录相关路由 ===
+router.post('/api/auth/wechat/qr', generateWechatQR);
+router.get('/api/auth/wechat/callback', handleWechatCallback);
+router.get('/api/auth/wechat/status/:qrId', checkWechatLoginStatus);
+router.post('/api/auth/wechat/bind', bindWechatUserInfo);
+
 // === 页面渲染 GET 请求 ===
 router.get('/login', renderLoginPage);
 router.get('/register', renderLoginPage); // 合并页面
 router.get('/portal', showPortal);
 router.get('/admin', authMiddleware, adminMiddleware, renderAdminPage);
 router.get('/reset-password', renderResetPasswordPage);
+router.get('/wechat-confirm', renderWechatConfirmPage);
 
 // === 数据 API GET 请求 ===
 router.get('/api/portal', authMiddleware, getPortalData);

@@ -25,9 +25,11 @@ model User {
   emailConfirmTokenExpires  DateTime?           @db.Timestamp(6)
   resetPasswordToken        String?             @unique @db.VarChar(255)
   resetPasswordTokenExpires DateTime?           @db.Timestamp(6)
+  wechatUnionId             String?             @unique
+  sentMessages              Message[]           @relation("MessageFromUser")
+  receivedMessages          Message[]           @relation("MessageToUser")
   projectAssignments        ProjectAssignment[]
-  sentMessages     Message[] @relation("MessageFromUser")
-  receivedMessages Message[] @relation("MessageToUser")
+  wechatQRCodes             WechatQRCode[]
 }
 
 model Project {
@@ -88,7 +90,6 @@ model Message {
   toUserId   Int?
   isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
-
   fromUser   User     @relation("MessageFromUser", fields: [fromUserId], references: [id])
   toUser     User?    @relation("MessageToUser", fields: [toUserId], references: [id])
 }
@@ -98,4 +99,14 @@ model SystemConfig {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model WechatQRCode {
+  id        String   @id @default(uuid())
+  status    String   @default("pending")
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  userId    Int?
+  state     String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
 }

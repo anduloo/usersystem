@@ -35,7 +35,6 @@ async function main() {
     ],
     skipDuplicates: true
   });
-  console.log('测试用户已插入');
 }
 
 main().finally(() => prisma.$disconnect());

@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // 检查URL参数中的token，写入localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    if (urlToken) {
+        localStorage.setItem('jwt_token', urlToken);
+        // 可选：清理URL参数，避免token泄露
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const tokenKey = 'jwt_token';
     const userInfoContainer = document.getElementById('user-info');
     const appContainer = document.getElementById('app-container');
@@ -7,17 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     let token = null;
     let allUsers = [];
     
-    // 从URL获取token
-    const params = new URLSearchParams(window.location.search);
-    const tokenFromUrl = params.get('token');
-    
-    if (tokenFromUrl) {
-        localStorage.setItem(tokenKey, tokenFromUrl);
-        window.history.replaceState({}, document.title, window.location.pathname);
-        token = tokenFromUrl;
-    } else {
-        token = localStorage.getItem(tokenKey);
-    }
+    // 优先从localStorage获取token，不依赖URL参数
+    token = localStorage.getItem(tokenKey);
     
     if (!token) {
         window.location.href = loginUrl;
@@ -34,7 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window.location.href = loginUrl;
                 throw new Error('认证失败');
             }
-            if (!res.ok) throw new Error('获取数据失败');
+            if (!res.ok) {
+                throw new Error('获取数据失败');
+            }
             return res.json();
         }));
         
@@ -63,13 +65,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem(tokenKey)}` }
                 });
                 if (response.status === 401) {
-                    console.log('Token已失效，可能是多端登录被踢下线');
                     localStorage.removeItem(tokenKey);
                     showKickoutTipAndRedirect();
                 }
             } catch (error) {
                 // 网络错误不影响登录状态判断
-                console.log('检查token状态时网络错误:', error);
             }
         }, 10000); // 10秒检查一次
     }
@@ -226,5 +226,73 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 消息中心功能已在 message.js 中实现，这里不需要重复代码
 
+    // 检查登录状态
+    async function checkAuthStatus() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            const response = await fetch('/api/auth/status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    // 清除token并重定向到登录页
+                    localStorage.removeItem('token');
+                    window.location.href = '/login?error=登录已过期';
+                    return;
+                }
+                throw new Error('认证检查失败');
+            }
+
+            const data = await response.json();
+            if (!data.authenticated) {
+                localStorage.removeItem('token');
+                window.location.href = '/login?error=登录已过期';
+                return;
+            }
+
+            // 更新用户信息显示
+            updateUserInfo(data.user);
+
+        } catch (error) {
+            localStorage.removeItem('token');
+            window.location.href = '/login?error=认证失败';
+        }
+    }
+
+    // 更新用户信息显示
+    function updateUserInfo(user) {
+        const userInfoElement = document.getElementById('user-info');
+        if (userInfoElement && user) {
+            userInfoElement.innerHTML = `
+                <p><strong>欢迎, ${user.name || user.email}!</strong></p>
+                <p>登录时间: ${new Date().toLocaleString()}</p>
+            `;
+        }
+    }
+
+    // 登出功能
+    function logout() {
+        localStorage.removeItem('token');
+        window.location.href = '/login?message=已成功登出';
+    }
+
+    // 页面加载时检查认证状态
+    document.addEventListener('DOMContentLoaded', function() {
+        checkAuthStatus();
+        
+        // 绑定登出按钮事件
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', logout);
+        }
+    });
 });
 

@@ -17,18 +17,14 @@
     <link rel="stylesheet" href="/css/components/template-editor.css">
 
     <!-- Chart.js 图表库 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/chart.js"></script>
 
     <!-- flatpickr 日期选择器 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+    <link rel="stylesheet" href="/css/flatpickr.min.css">
+    <script src="/js/flatpickr.js"></script>
+    <script src="/js/zh.js"></script>
 
-    <!-- Select2 美化多选下拉 
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>-->
-    
+      
 </head>
 <body>
     <!-- 侧边栏 -->
@@ -438,7 +434,7 @@
                   <div class="card" id="wechat-config-card">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                       <div style="display:flex;align-items:center;gap:0.8rem;">
-                        <i class="fa fa-wechat" style="color:var(--accent2);font-size:1.3rem;"></i>
+                        <i class="fa-brands fa-weixin" style="color:var(--accent2);font-size:1.3rem;"></i>
                         <span style="font-size:1.2em;font-weight:700;color:var(--accent);">微信公众号配置</span>
                       </div>
                       <div>
@@ -702,11 +698,11 @@
           <input type="hidden" id="reset-user-id">
           <div class="form-group">
             <label for="reset-new-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="reset-new-password" placeholder="新密码（至少6位）" required autocomplete="new-password">
+            <input type="password" id="reset-new-password" class="styled-input" placeholder="新密码（至少6位）" required autocomplete="new-password">
           </div>
           <div class="form-group">
             <label for="reset-confirm-password"><i class="fa fa-lock"></i></label>
-            <input type="password" id="reset-confirm-password" placeholder="确认新密码" required autocomplete="new-password">
+            <input type="password" id="reset-confirm-password" class="styled-input" placeholder="确认新密码" required autocomplete="new-password">
           </div>
           <div id="reset-password-error" class="form-error" style="display:none;"></div>
           <div class="actions">

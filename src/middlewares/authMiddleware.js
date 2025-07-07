@@ -6,13 +6,13 @@ const authMiddleware = async (req, res, next) => {
   const isApi = (req.path && req.path.startsWith('/api/')) || (req.originalUrl && req.originalUrl.startsWith('/api/'));
   let token = null;
 
-  // 1. 优先从 cookie 获取 token
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
-  }
-  // 2. 其次从请求头获取 token
-  else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+  // 1. 对于API请求，优先从请求头获取 token
+  if (isApi && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
+  }
+  // 2. 其次从 cookie 获取 token
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
   // 3. 最后从 query 参数获取 token
   else if (req.query && req.query.token) {
@@ -45,12 +45,28 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // 新增校验tokenVersion和sessionId
-    if (
-      typeof decoded.tokenVersion === 'undefined' ||
-      typeof decoded.sessionId === 'undefined' ||
-      user.tokenVersion !== decoded.tokenVersion ||
-      user.currentSession !== decoded.sessionId
-    ) {
+    if (typeof decoded.tokenVersion === 'undefined') {
+      if (isApi) {
+        return res.status(401).json({ message: '认证失败：Token已失效' });
+      }
+      return res.redirect('/login?error=Token已失效');
+    }
+    
+    if (typeof decoded.sessionId === 'undefined') {
+      if (isApi) {
+        return res.status(401).json({ message: '认证失败：Token已失效' });
+      }
+      return res.redirect('/login?error=Token已失效');
+    }
+    
+    if (user.tokenVersion !== decoded.tokenVersion) {
+      if (isApi) {
+        return res.status(401).json({ message: '认证失败：Token已失效' });
+      }
+      return res.redirect('/login?error=Token已失效');
+    }
+    
+    if (user.currentSession !== decoded.sessionId) {
       if (isApi) {
         return res.status(401).json({ message: '认证失败：Token已失效' });
       }

@@ -1,3 +1,12 @@
+// 检查URL参数中的token，写入localStorage
+const urlParams = new URLSearchParams(window.location.search);
+const urlToken = urlParams.get('token');
+if (urlToken) {
+    localStorage.setItem('jwt_token', urlToken);
+    // 可选：清理URL参数，避免token泄露
+    window.history.replaceState({}, document.title, window.location.pathname);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     const token = localStorage.getItem('jwt_token');
     if (!token) {
@@ -34,8 +43,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('user-info').innerText = user.name || user.email;
             isSuperAdmin = user.isSuperAdmin;
             if (isSuperAdmin) {
-                document.getElementById('tab-system-config').style.display = '';
-                document.getElementById('system-config-section').style.display = '';
+                const tabSystemConfig = document.getElementById('tab-system-config');
+                const systemConfigSection = document.getElementById('system-config-section');
+                if (tabSystemConfig) tabSystemConfig.style.display = '';
+                if (systemConfigSection) systemConfigSection.style.display = '';
             }
         } else {
             document.getElementById('user-info').innerText = '';
@@ -268,7 +279,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 apiFetch('/api/users'),
                 apiFetch('/api/projects')
             ]);
-            console.log('loadInitialData users:', users); // 调试输出
             if (users && users.length > 0) {
                 allUsers = users;
                 // 设置全局 allUsers，供其他模块使用
@@ -487,22 +497,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     window.resetPasswordModal = (userId) => {
+        // 隐藏所有其它弹窗
+        document.querySelectorAll('.modal').forEach(m => {
+          if (m.id !== 'reset-password-modal') m.classList.remove('show');
+        });
+
+        // 填充内容
         const user = allUsers.find(u => u.id === userId);
         document.getElementById('reset-password-modal-title').innerText = `重置 ${user.name || user.email} 的密码`;
         document.getElementById('reset-password-modal-subtitle').innerText = `为用户设置新的登录密码`;
         document.getElementById('reset-user-id').value = userId;
         document.getElementById('reset-password-form').reset();
         document.getElementById('reset-password-error').style.display = 'none';
-        document.getElementById('reset-password-modal').style.display = 'flex';
+
+        // 移动到body最后
+        const modal = document.getElementById('reset-password-modal');
+        if (modal && modal.parentNode !== document.body) {
+            document.body.appendChild(modal);
+        } else if (modal && document.body.lastChild !== modal) {
+            document.body.appendChild(modal);
+        }
+        modal.classList.add('show');
         document.getElementById('reset-new-password').focus();
     };
 
     // 重置密码弹窗事件处理
-    document.getElementById('cancel-reset-password-modal').addEventListener('click', () => {
-        document.getElementById('reset-password-modal').style.display = 'none';
-        document.getElementById('reset-password-form').reset();
-        document.getElementById('reset-password-error').style.display = 'none';
-    });
+    // 隐藏时移除 .show
+        document.getElementById('cancel-reset-password-modal').addEventListener('click', () => {
+            const modal = document.getElementById('reset-password-modal');
+            modal.classList.remove('show');
+            document.getElementById('reset-password-form').reset();
+            document.getElementById('reset-password-error').style.display = 'none';
+        });
 
     document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -1294,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 系统配置管理逻辑
     const allSections = document.querySelectorAll('main > section');
-    if (tabSystemConfig) {
+    if (tabSystemConfig && systemConfigSection) {
       tabSystemConfig.onclick = function(e) {
         e.preventDefault();
         allSections.forEach(s => s.style.display = 'none');
@@ -1312,102 +1338,165 @@ document.addEventListener('DOMContentLoaded', async () => {
             const configs = await apiFetch('/api/configs');
             const configMap = {};
             configs.forEach(cfg => configMap[cfg.key] = cfg.value);
-            // 邮件
-            document.getElementById('mail-host').value = configMap['mail_host'] || '';
-            document.getElementById('mail-port').value = configMap['mail_port'] || '';
-            document.getElementById('mail-secure').value = configMap['mail_secure'] || '';
-            document.getElementById('mail-user').value = configMap['mail_user'] || '';
-            document.getElementById('mail-pass').value = configMap['mail_pass'] || '';
-            document.getElementById('mail-from').value = configMap['mail_from'] || '';
-            // 微信
-            document.getElementById('wx-appid').value = configMap['wx_appid'] || '';
-            document.getElementById('wx-secret').value = configMap['wx_secret'] || '';
-            document.getElementById('wx-token').value = configMap['wx_token'] || '';
-            document.getElementById('wx-aeskey').value = configMap['wx_aeskey'] || '';
-            // 欢迎邮件模板
-            document.getElementById('welcome-mail-template').value = configMap['welcome_mail_template'] || getDefaultWelcomeTemplate();
-            // 重置密码邮件模板
-            document.getElementById('reset-password-mail-template').value = configMap['reset_password_mail_template'] || getDefaultResetPasswordTemplate();
+            
+            // 邮件配置元素
+            const mailHost = document.getElementById('mail-host');
+            const mailPort = document.getElementById('mail-port');
+            const mailSecure = document.getElementById('mail-secure');
+            const mailUser = document.getElementById('mail-user');
+            const mailPass = document.getElementById('mail-pass');
+            const mailFrom = document.getElementById('mail-from');
+            
+            // 微信配置元素
+            const wxAppid = document.getElementById('wx-appid');
+            const wxSecret = document.getElementById('wx-secret');
+            const wxToken = document.getElementById('wx-token');
+            const wxAeskey = document.getElementById('wx-aeskey');
+            
+            // 模板元素
+            const welcomeTemplate = document.getElementById('welcome-mail-template');
+            const resetPasswordTemplate = document.getElementById('reset-password-mail-template');
+            
+            // 邮件配置赋值
+            if (mailHost) mailHost.value = configMap['mail_host'] || '';
+            if (mailPort) mailPort.value = configMap['mail_port'] || '';
+            if (mailSecure) mailSecure.value = configMap['mail_secure'] || '';
+            if (mailUser) mailUser.value = configMap['mail_user'] || '';
+            if (mailPass) mailPass.value = configMap['mail_pass'] || '';
+            if (mailFrom) mailFrom.value = configMap['mail_from'] || '';
+            
+            // 微信配置赋值
+            if (wxAppid) wxAppid.value = configMap['wx_appid'] || '';
+            if (wxSecret) wxSecret.value = configMap['wx_secret'] || '';
+            if (wxToken) wxToken.value = configMap['wx_token'] || '';
+            if (wxAeskey) wxAeskey.value = configMap['wx_aeskey'] || '';
+            
+            // 模板赋值
+            if (welcomeTemplate) welcomeTemplate.value = configMap['welcome_mail_template'] || getDefaultWelcomeTemplate();
+            if (resetPasswordTemplate) resetPasswordTemplate.value = configMap['reset_password_mail_template'] || getDefaultResetPasswordTemplate();
         } catch (e) {
             alert('加载系统配置失败: ' + e.message);
         }
     }
-        // 微信公众号配置弹窗逻辑
-    const wechatConfigModal = document.getElementById('wechat-config-modal');
-    document.getElementById('wechat-test-btn').onclick = async () => {
-      const appid = document.getElementById('wx-appid').value.trim();
-      const secret = document.getElementById('wx-secret').value.trim();
-      const token = document.getElementById('wx-token').value.trim();
-      const aeskey = document.getElementById('wx-aeskey').value.trim();
-      const resultDiv = document.getElementById('wechat-test-result');
-      resultDiv.style.display = 'block';
-      resultDiv.style.color = '#888';
-      resultDiv.textContent = '正在测试连接...';
-      document.getElementById('wechat-save-btn').disabled = true;
-      try {
-        const res = await apiFetch('/api/configs/test-wechat', {
-          method: 'POST',
-          body: JSON.stringify({ appid, secret, token, aeskey })
-        });
-        resultDiv.style.color = '#059669';
-        resultDiv.textContent = '测试连接成功！';
-        document.getElementById('wechat-save-btn').disabled = false;
-      } catch (e) {
-        resultDiv.style.color = '#e53e3e';
-        resultDiv.textContent = '测试连接失败：' + e.message;
-        document.getElementById('wechat-save-btn').disabled = true;
-      }
-    };
-    document.getElementById('wechat-config-form').onsubmit = async function(e) {
-      e.preventDefault();
-      if (document.getElementById('wechat-save-btn').disabled) return;
-      // 保存到系统配置
-      const data = [
-        { key: 'wx_appid', value: document.getElementById('wx-appid').value.trim() },
-        { key: 'wx_secret', value: document.getElementById('wx-secret').value.trim() },
-        { key: 'wx_token', value: document.getElementById('wx-token').value.trim() },
-        { key: 'wx_aeskey', value: document.getElementById('wx-aeskey').value.trim() }
-      ];
-      try {
-        for (const item of data) {
-          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify(item) });
+        // 微信公众号配置测试逻辑
+    const wechatTestBtn = document.getElementById('wechat-test-btn');
+    if (wechatTestBtn) {
+      wechatTestBtn.onclick = async () => {
+        const appid = document.getElementById('wx-appid')?.value?.trim() || '';
+        const secret = document.getElementById('wx-secret')?.value?.trim() || '';
+        const token = document.getElementById('wx-token')?.value?.trim() || '';
+        const aeskey = document.getElementById('wx-aeskey')?.value?.trim() || '';
+        const resultDiv = document.getElementById('wechat-test-result');
+        
+        if (!resultDiv) {
+          alert('找不到测试结果元素');
+          return;
         }
-        alert('保存成功！');
-        wechatConfigModal.style.display = 'none';
-        loadSystemConfigs();
-      } catch (e) {
-        alert('保存失败：' + e.message);
-      }
-    };
+        
+        if (!appid || !secret) {
+          resultDiv.style.display = 'block';
+          resultDiv.style.color = '#e53e3e';
+          resultDiv.textContent = '请先填写AppID和AppSecret';
+          return;
+        }
+        
+        resultDiv.style.display = 'block';
+        resultDiv.style.color = '#888';
+        resultDiv.textContent = '正在测试连接...';
+        
+        const wechatSaveBtn = document.getElementById('wechat-save-btn');
+        if (wechatSaveBtn) wechatSaveBtn.disabled = true;
+        
+        try {
+          const res = await apiFetch('/api/configs/test-wechat', {
+            method: 'POST',
+            body: JSON.stringify({ appid, secret, token, aeskey })
+          });
+          
+          if (res && res.success) {
+            resultDiv.style.color = '#059669';
+            resultDiv.textContent = res.message || '测试连接成功！';
+            if (wechatSaveBtn) wechatSaveBtn.disabled = false;
+          } else {
+            resultDiv.style.color = '#e53e3e';
+            resultDiv.textContent = (res && res.message) ? ('测试连接失败：' + res.message) : '测试连接失败';
+            if (wechatSaveBtn) wechatSaveBtn.disabled = true;
+          }
+        } catch (e) {
+          resultDiv.style.color = '#e53e3e';
+          resultDiv.textContent = '测试连接失败：' + e.message;
+          if (wechatSaveBtn) wechatSaveBtn.disabled = true;
+        }
+      };
+    }
+    const wechatConfigForm = document.getElementById('wechat-config-form');
+    if (wechatConfigForm) {
+      wechatConfigForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const wechatSaveBtn = document.getElementById('wechat-save-btn');
+        if (wechatSaveBtn && wechatSaveBtn.disabled) return;
+        
+        // 保存到系统配置
+        const data = [
+          { key: 'wx_appid', value: document.getElementById('wx-appid')?.value?.trim() || '' },
+          { key: 'wx_secret', value: document.getElementById('wx-secret')?.value?.trim() || '' },
+          { key: 'wx_token', value: document.getElementById('wx-token')?.value?.trim() || '' },
+          { key: 'wx_aeskey', value: document.getElementById('wx-aeskey')?.value?.trim() || '' }
+        ];
+        try {
+          for (const item of data) {
+            await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify(item) });
+          }
+          alert('保存成功！');
+          loadSystemConfigs();
+        } catch (e) {
+          alert('保存失败：' + e.message);
+        }
+      };
+    }
 
-    document.getElementById('mail-config-form').onsubmit = async function(e) {
-      e.preventDefault();
-      if (document.getElementById('mail-save-btn').disabled) return;
-      const host = document.getElementById('mail-host').value.trim();
-      const port = document.getElementById('mail-port').value.trim();
-      const secure = document.getElementById('mail-secure').value.trim();
-      const user = document.getElementById('mail-user').value.trim();
-      const pass = document.getElementById('mail-pass').value.trim();
-      const from = document.getElementById('mail-from').value.trim();
-      const resultDiv = document.getElementById('mail-test-result');
-      resultDiv.style.display = 'block';
-      resultDiv.style.color = '#888';
-      resultDiv.textContent = '正在保存...';
-      try {
-        // 你可以按需调整接口和参数
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_host', value: host }) });
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_port', value: port }) });
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_secure', value: secure }) });
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_user', value: user }) });
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_pass', value: pass }) });
-        await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_from', value: from }) });
-        resultDiv.style.color = '#059669';
-        resultDiv.textContent = '保存成功！';
-      } catch (e) {
-        resultDiv.style.color = '#e53e3e';
-        resultDiv.textContent = '保存失败：' + e.message;
-      }
-    };
+    const mailConfigForm = document.getElementById('mail-config-form');
+    if (mailConfigForm) {
+      mailConfigForm.onsubmit = async function(e) {
+        e.preventDefault();
+        const mailSaveBtn = document.getElementById('mail-save-btn');
+        if (mailSaveBtn && mailSaveBtn.disabled) return;
+        
+        const host = document.getElementById('mail-host')?.value?.trim() || '';
+        const port = document.getElementById('mail-port')?.value?.trim() || '';
+        const secure = document.getElementById('mail-secure')?.value?.trim() || '';
+        const user = document.getElementById('mail-user')?.value?.trim() || '';
+        const pass = document.getElementById('mail-pass')?.value?.trim() || '';
+        const from = document.getElementById('mail-from')?.value?.trim() || '';
+        const resultDiv = document.getElementById('mail-test-result');
+        
+        if (resultDiv) {
+          resultDiv.style.display = 'block';
+          resultDiv.style.color = '#888';
+          resultDiv.textContent = '正在保存...';
+        }
+        
+        try {
+          // 你可以按需调整接口和参数
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_host', value: host }) });
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_port', value: port }) });
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_secure', value: secure }) });
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_user', value: user }) });
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_pass', value: pass }) });
+          await apiFetch('/api/configs', { method: 'POST', body: JSON.stringify({ key: 'mail_from', value: from }) });
+          
+          if (resultDiv) {
+            resultDiv.style.color = '#059669';
+            resultDiv.textContent = '保存成功！';
+          }
+        } catch (e) {
+          if (resultDiv) {
+            resultDiv.style.color = '#e53e3e';
+            resultDiv.textContent = '保存失败：' + e.message;
+          }
+        }
+      };
+    }
 
     document.getElementById('mail-test-btn').onclick = async function() {
       const resultDiv = document.getElementById('mail-test-result');
@@ -1419,19 +1508,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       resultDiv.style.color = '#888';
       resultDiv.textContent = '正在测试发送...';
       try {
-        let secure = document.getElementById('mail-secure').value.trim();
+        let secure = document.getElementById('mail-secure')?.value?.trim() || '';
         // 只允许 'ssl' 或 'none'
         if (secure !== 'ssl' && secure !== 'none') secure = 'none';
         const res = await apiFetch('/api/configs/test-mail', {
           method: 'POST',
           body: JSON.stringify({
-            host: document.getElementById('mail-host').value.trim(),
-            port: document.getElementById('mail-port').value.trim(),
+            host: document.getElementById('mail-host')?.value?.trim() || '',
+            port: document.getElementById('mail-port')?.value?.trim() || '',
             secure: secure,
-            user: document.getElementById('mail-user').value.trim(),
-            pass: document.getElementById('mail-pass').value.trim(),
-            from: document.getElementById('mail-from').value.trim(),
-            to: document.getElementById('mail-test-to').value.trim()
+            user: document.getElementById('mail-user')?.value?.trim() || '',
+            pass: document.getElementById('mail-pass')?.value?.trim() || '',
+            from: document.getElementById('mail-from')?.value?.trim() || '',
+            to: document.getElementById('mail-test-to')?.value?.trim() || ''
           })
         });
         if (res && res.success) {
@@ -1444,7 +1533,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch (e) {
         resultDiv.style.color = '#e53e3e';
         resultDiv.textContent = '测试发送失败：' + e.message;
-
       }
     };
 
@@ -1452,77 +1540,134 @@ document.addEventListener('DOMContentLoaded', async () => {
     function setMailFormReadonly(readonly) {
       ['mail-host', 'mail-port', 'mail-user', 'mail-pass', 'mail-secure'].forEach(id => {
         const el = document.getElementById(id);
-        if (el.tagName === 'SELECT') {
+        if (el && el.tagName === 'SELECT') {
           el.disabled = readonly;
-        } else {
+        } else if (el) {
           el.readOnly = readonly;
         }
       });
     }
     function showMailTestFields(show) {
-      document.getElementById('mail-test-fields').style.display = show ? '' : 'none';
+      const mailTestFields = document.getElementById('mail-test-fields');
+      if (mailTestFields) {
+        mailTestFields.style.display = show ? '' : 'none';
+      }
     }
-    document.getElementById('mail-edit-btn').onclick = function() {
-      setMailFormReadonly(false);
-      this.style.display = 'none';
-      document.getElementById('mail-save-btn').style.display = '';
-      document.getElementById('mail-cancel-btn').style.display = '';
-      showMailTestFields(true);
-    };
-    document.getElementById('mail-cancel-btn').onclick = function() {
-      setMailFormReadonly(true);
-      this.style.display = 'none';
-      document.getElementById('mail-save-btn').style.display = 'none';
-      document.getElementById('mail-edit-btn').style.display = '';
-      showMailTestFields(false);
-      // 重新加载配置
-      if (typeof loadSystemConfigs === 'function') loadSystemConfigs();
-    };
-    document.getElementById('mail-save-btn').onclick = function() {
-      document.getElementById('mail-config-form').dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}));
-    };
+    
+    const mailEditBtn = document.getElementById('mail-edit-btn');
+    if (mailEditBtn) {
+      mailEditBtn.onclick = function() {
+        setMailFormReadonly(false);
+        this.style.display = 'none';
+        const mailSaveBtn = document.getElementById('mail-save-btn');
+        const mailCancelBtn = document.getElementById('mail-cancel-btn');
+        if (mailSaveBtn) mailSaveBtn.style.display = '';
+        if (mailCancelBtn) mailCancelBtn.style.display = '';
+        showMailTestFields(true);
+      };
+    }
+    
+    const mailCancelBtn = document.getElementById('mail-cancel-btn');
+    if (mailCancelBtn) {
+      mailCancelBtn.onclick = function() {
+        setMailFormReadonly(true);
+        this.style.display = 'none';
+        const mailSaveBtn = document.getElementById('mail-save-btn');
+        const mailEditBtn = document.getElementById('mail-edit-btn');
+        if (mailSaveBtn) mailSaveBtn.style.display = 'none';
+        if (mailEditBtn) mailEditBtn.style.display = '';
+        showMailTestFields(false);
+        // 重新加载配置
+        if (typeof loadSystemConfigs === 'function') loadSystemConfigs();
+      };
+    }
+    
+    const mailSaveBtn = document.getElementById('mail-save-btn');
+    if (mailSaveBtn) {
+      mailSaveBtn.onclick = function() {
+        const mailConfigForm = document.getElementById('mail-config-form');
+        if (mailConfigForm) {
+          mailConfigForm.dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}));
+        }
+      };
+    }
+    
     setMailFormReadonly(true);
     showMailTestFields(false);
 
     // 微信配置编辑/保存/取消逻辑
     function setWechatFormReadonly(readonly) {
       ['wx-appid', 'wx-secret', 'wx-token', 'wx-aeskey'].forEach(id => {
-        document.getElementById(id).readOnly = readonly;
+        const el = document.getElementById(id);
+        if (el) {
+          el.readOnly = readonly;
+        }
       });
     }
-    document.getElementById('wechat-edit-btn').onclick = function() {
-      setWechatFormReadonly(false);
-      this.style.display = 'none';
-      document.getElementById('wechat-save-btn').style.display = '';
-      document.getElementById('wechat-cancel-btn').style.display = '';
-    };
-    document.getElementById('wechat-cancel-btn').onclick = function() {
-      setWechatFormReadonly(true);
-      this.style.display = 'none';
-      document.getElementById('wechat-save-btn').style.display = 'none';
-      document.getElementById('wechat-edit-btn').style.display = '';
-      // 重新加载配置
-      if (typeof loadSystemConfigs === 'function') loadSystemConfigs();
-    };
-    document.getElementById('wechat-save-btn').onclick = function() {
-      document.getElementById('wechat-config-form').dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}));
-    };
+    
+    const wechatEditBtn = document.getElementById('wechat-edit-btn');
+    if (wechatEditBtn) {
+      wechatEditBtn.onclick = function() {
+        setWechatFormReadonly(false);
+        this.style.display = 'none';
+        const wechatSaveBtn = document.getElementById('wechat-save-btn');
+        const wechatCancelBtn = document.getElementById('wechat-cancel-btn');
+        if (wechatSaveBtn) wechatSaveBtn.style.display = '';
+        if (wechatCancelBtn) wechatCancelBtn.style.display = '';
+      };
+    }
+    
+    const wechatCancelBtn = document.getElementById('wechat-cancel-btn');
+    if (wechatCancelBtn) {
+      wechatCancelBtn.onclick = function() {
+        setWechatFormReadonly(true);
+        this.style.display = 'none';
+        const wechatSaveBtn = document.getElementById('wechat-save-btn');
+        const wechatEditBtn = document.getElementById('wechat-edit-btn');
+        if (wechatSaveBtn) wechatSaveBtn.style.display = 'none';
+        if (wechatEditBtn) wechatEditBtn.style.display = '';
+        // 重新加载配置
+        if (typeof loadSystemConfigs === 'function') loadSystemConfigs();
+      };
+    }
+    
+    const wechatSaveBtn = document.getElementById('wechat-save-btn');
+    if (wechatSaveBtn) {
+      wechatSaveBtn.onclick = function() {
+        const wechatConfigForm = document.getElementById('wechat-config-form');
+        if (wechatConfigForm) {
+          wechatConfigForm.dispatchEvent(new Event('submit', {cancelable:true, bubbles:true}));
+        }
+      };
+    }
+    
     setWechatFormReadonly(true);
 
     // 保存后自动只读、按钮切换
-    document.getElementById('mail-config-form').addEventListener('submit', function() {
-      setMailFormReadonly(true);
-      document.getElementById('mail-save-btn').style.display = 'none';
-      document.getElementById('mail-cancel-btn').style.display = 'none';
-      document.getElementById('mail-edit-btn').style.display = '';
-      showMailTestFields(false);
-    });
-    document.getElementById('wechat-config-form').addEventListener('submit', function() {
-      setWechatFormReadonly(true);
-      document.getElementById('wechat-save-btn').style.display = 'none';
-      document.getElementById('wechat-cancel-btn').style.display = 'none';
-      document.getElementById('wechat-edit-btn').style.display = '';
-    });
+    if (mailConfigForm) {
+      mailConfigForm.addEventListener('submit', function() {
+        setMailFormReadonly(true);
+        const mailSaveBtn = document.getElementById('mail-save-btn');
+        const mailCancelBtn = document.getElementById('mail-cancel-btn');
+        const mailEditBtn = document.getElementById('mail-edit-btn');
+        if (mailSaveBtn) mailSaveBtn.style.display = 'none';
+        if (mailCancelBtn) mailCancelBtn.style.display = 'none';
+        if (mailEditBtn) mailEditBtn.style.display = '';
+        showMailTestFields(false);
+      });
+    }
+    
+    if (wechatConfigForm) {
+      wechatConfigForm.addEventListener('submit', function() {
+        setWechatFormReadonly(true);
+        const wechatSaveBtn = document.getElementById('wechat-save-btn');
+        const wechatCancelBtn = document.getElementById('wechat-cancel-btn');
+        const wechatEditBtn = document.getElementById('wechat-edit-btn');
+        if (wechatSaveBtn) wechatSaveBtn.style.display = 'none';
+        if (wechatCancelBtn) wechatCancelBtn.style.display = 'none';
+        if (wechatEditBtn) wechatEditBtn.style.display = '';
+      });
+    }
 
     // 欢迎邮件模板保存按钮逻辑
     if (document.getElementById('save-welcome-mail-template')) {
@@ -1763,6 +1908,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         maxDate: 'today',
         defaultDate: formatDate(today)
     });
+
+    function showResetPasswordModal() {
+      const modal = document.getElementById('reset-password-modal');
+      // 将弹窗节点移到 body 最后，确保在最上层
+      if (modal && modal.parentNode !== document.body) {
+        document.body.appendChild(modal);
+      } else if (modal && document.body.lastChild !== modal) {
+        document.body.appendChild(modal);
+      }
+      modal.style.display = 'block';
+      // 其它显示逻辑（如重置表单、清空错误提示等）可在这里补充
+    }
+
+    // 隐藏弹窗
+    function hideResetPasswordModal() {
+      const modal = document.getElementById('reset-password-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    // 绑定按钮事件（示例）
+    document.getElementById('edit-reset-password-btn').onclick = showResetPasswordModal;
+    document.getElementById('cancel-reset-password-modal').onclick = hideResetPasswordModal;
 
 });
 

@@ -4,11 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录</title>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/pages/login-page.css">
     <link rel="stylesheet" href="/css/components/form.css">
     <link rel="stylesheet" href="/css/components/modal.css">
+    <!-- 阿里云QRCode库 -->
+    <script src="https://g.alicdn.com/dingding/home/0.1.5/js/qrcode.js"></script>
 </head>
 <body class="login-bg">
     <!-- 背景装饰元素 -->
@@ -44,6 +45,42 @@
                 <a href="#" class="forgot-link" id="showForgotPasswordModalBtn">忘记密码?</a>
             </div>
             <button type="submit" class="login-btn">登录</button>
+            
+            <!-- 第三方登录区域 -->
+            <div class="third-party-login">
+                <div class="divider">
+                    <span>第三方登录</span>
+                </div>
+                <div class="third-party-buttons">
+                    <div class="wechat-login-btn" id="wechat-login-btn" title="微信登录">
+                      <i class="fa-brands fa-weixin"></i>
+                        <div class="qr-popup" id="qr-popup">
+                            <div class="qr-container">
+                                <div class="qr-loading" id="qr-loading">
+                                    <i class="fa fa-spinner fa-spin"></i>
+                                    <p>正在生成二维码...</p>
+                                </div>
+                                <div class="qr-code" id="qr-code" style="display: none;">
+                                    <div id="qr-image"></div>
+                                    <button type="button" class="qr-refresh-btn" id="refresh-qr-btn">
+                                        <i class="fa fa-refresh"></i>
+                                        刷新二维码
+                                    </button>
+                                </div>
+                                <div class="qr-expired" id="qr-expired" style="display: none;">
+                                    <i class="fa fa-exclamation-triangle"></i>
+                                    <p>二维码已过期</p>
+                                    <button type="button" class="qr-refresh-btn" id="refresh-expired-btn">
+                                        <i class="fa fa-refresh"></i>
+                                        重新生成
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="register-link">
                 还没有账户? <a href="#" id="showRegisterModalBtn">立即注册</a>
             </div>
@@ -97,6 +134,26 @@
         </form>
       </div>
     </div>
+    
+    <!-- 微信绑定信息弹窗 -->
+    <div id="bindInfoModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-title">补全账号信息</div>
+        <form id="bindInfoForm">
+          <div class="form-group">
+            <label for="bind-email"><i class="fa fa-envelope"></i></label>
+            <input type="email" id="bind-email" class="styled-input" name="email" required placeholder="邮箱">
+          </div>
+          <div class="form-group">
+            <label for="bind-name"><i class="fa fa-user"></i></label>
+            <input type="text" id="bind-name" class="styled-input" name="name" required placeholder="姓名">
+          </div>
+          <div id="bindInfoError" class="form-error" style="display:none;"></div>
+          <button type="submit" class="login-btn">提交</button>
+        </form>
+      </div>
+    </div>
+    
     <script src="/js/login.js"></script>
- </body>
+</body>
 </html>

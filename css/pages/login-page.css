@@ -187,59 +187,6 @@ body::before {
   flex-direction: column;
 }
 
-.form-group {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.8);
-  border-radius: var(--radius);
-  border: 2px solid rgba(102, 126, 234, 0.1);
-  padding: 0.8rem 1rem;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.form-group:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.2);
-  transform: translateY(-1px);
-}
-
-.form-group label {
-  min-width: 40px;
-  color: var(--accent);
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.form-group:focus-within label {
-  color: var(--accent2);
-  transform: scale(1.1);
-}
-
-.login-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  padding: 0.8rem 0.5rem;
-  font-size: 1rem;
-  color: var(--text);
-  font-weight: 500;
-}
-
-.login-input:focus {
-  background: rgba(255,255,255,0.5);
-}
-
-.login-input::placeholder {
-  color: var(--muted);
-  font-weight: 400;
-}
-
 .toggle-password {
   margin-left: -30px;
   color: var(--muted);
@@ -261,7 +208,7 @@ body::before {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 1rem 0;
+  margin: 0 0.5rem;
   font-size: 0.95rem;
 }
 
@@ -375,129 +322,311 @@ body::before {
   transform: translateX(2px);
 }
 
-/* 错误消息 */
-.form-error {
-  background: linear-gradient(135deg, rgba(245, 101, 101, 0.1), rgba(229, 62, 62, 0.1));
-  border: 1px solid rgba(245, 101, 101, 0.3);
-  color: var(--danger);
-  border-radius: var(--radius);
-  padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
-  width: 100%;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 600;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  animation: shake 0.5s ease;
-}
-
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
 
-/* 弹窗样式 */
-.modal {
+/* 密码强度指示器 */
+.password-strength {
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
   display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(102, 126, 234, 0.1);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+}
+
+.password-strength.weak {
+  background: rgba(245, 101, 101, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(245, 101, 101, 0.2);
+  display: block;
+}
+
+.password-strength.medium {
+  background: rgba(237, 137, 54, 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(237, 137, 54, 0.2);
+  display: block;
+}
+
+.password-strength.strong {
+  background: rgba(72, 187, 120, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(72, 187, 120, 0.2);
+  display: block;
+}
+
+/* 加载状态 */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255,255,255,.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 微信登录相关样式 */
+.login-method-switch {
+  display: flex;
+  background: rgba(255,255,255,0.8);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.method-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.8rem 1rem;
+  border-radius: calc(var(--radius) - 4px);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.3s ease;
+  display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.3s ease;
+  gap: 0.5rem;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.method-btn:hover {
+  color: var(--accent);
+  background: rgba(102, 126, 234, 0.05);
 }
 
-.modal-content {
-  background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: var(--radius);
-  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.2);
-  padding: 2.5rem;
-  max-width: 450px;
+.method-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.method-btn i {
+  font-size: 1rem;
+}
+
+.login-method-form {
   width: 100%;
-  color: var(--text);
-  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* 第三方登录区域样式 */
+.third-party-login {
+  width: 100%;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+}
+
+.divider span {
+  background: var(--card-bg);
+  padding: 0 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  position: relative;
+  z-index: 0;
+}
+
+.third-party-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.wechat-login-btn {
+  position: relative;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #07c160, #00d4aa);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(7, 193, 96, 0.3);
+}
+
+
+.wechat-login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(7, 193, 96, 0.4);
+}
+
+.wechat-login-btn i {
+  font-size: 1rem;
+}
+
+/* 二维码弹窗样式 */
+.qr-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  width: 280px;
+  display: none;
+  z-index: 1000;
+  border: 1px solid var(--border);
+}
+
+.qr-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: white;
+}
+
+.wechat-login-btn:hover .qr-popup {
+  display: block;
+}
+
+/* 合并后的二维码相关样式 */
+.qr-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  overflow: hidden;
-  animation: slideIn 0.3s ease;
+  gap: 1rem;
 }
-
-@keyframes slideIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(-20px) scale(0.95);
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-}
-
-.modal-title {
-  font-size: 1.8rem;
-  font-weight: 800;
-  color: var(--accent);
-  margin-bottom: 0.5rem;
-  letter-spacing: 1px;
-  text-align: center;
-}
-
-.modal-subtitle {
+.qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   color: var(--muted);
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 1rem;
+}
+.qr-loading i {
+  font-size: 2rem;
+  color: var(--accent);
+}
+.qr-loading p {
+  font-size: 0.9rem;
   font-weight: 500;
 }
-
-.modal-cancel {
-  width: 100%;
-  background: linear-gradient(135deg, #f7fafc, #edf2f7);
-  color: var(--accent);
-  border: 1px solid rgba(102, 126, 234, 0.2);
-  border-radius: var(--radius);
-  padding: 0.8rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
 }
-
-.modal-cancel:hover {
-  background: linear-gradient(135deg, #edf2f7, #e2e8f0);
-  color: var(--accent2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+#qr-image {
+  width: 200px;
+  height: 200px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+#qr-image img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: calc(var(--radius) - 2px);
+}
+.qr-tip {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 0;
+}
+.qr-refresh-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+.qr-refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+.qr-refresh-btn:active {
+  transform: translateY(0);
+}
+.qr-expired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--warning);
+}
+.qr-expired i {
+  font-size: 2rem;
+}
+.qr-expired p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+.wechat-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--success);
+}
+.wechat-success i {
+  font-size: 2rem;
+}
+.wechat-success p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+/* 响应式只保留差异部分 */
+@media (max-width: 480px) {
+  #qr-image {
+    width: 180px;
+    height: 180px;
+  }
+  .qr-popup {
+    width: 260px;
+    padding: 1rem;
+  }
 }
 
 /* 响应式设计 */
@@ -505,15 +634,6 @@ body::before {
   .glass-card {
     margin: 1rem;
     padding: 2rem 1.5rem;
-  }
-  
-  .modal-content {
-    margin: 1rem;
-    padding: 2rem 1.5rem;
-  }
-  
-  .login-title {
-    font-size: 2rem;
   }
   
   .decor1, .decor2 {
@@ -529,10 +649,6 @@ body::before {
 
 @media (max-width: 480px) {
   .glass-card {
-    padding: 1.5rem 1rem;
-  }
-  
-  .modal-content {
     padding: 1.5rem 1rem;
   }
   
@@ -688,11 +804,171 @@ body::before {
   background: #e2e8f0;
 }
 #forgotSendBtnLoading.loading {
-  display: inline-block !important;
-  width: 18px;
-  height: 18px;
-  border: 3px solid rgba(255,255,255,.3);
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid #fff;
   border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 1s linear infinite;
+}
+
+/* 微信登录相关样式 */
+.login-method-switch {
+  display: flex;
+  background: rgba(255,255,255,0.8);
+  border-radius: var(--radius);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.login-method-form {
+  width: 100%;
+}
+
+
+.wechat-login-btn:hover .qr-popup {
+  display: block;
+}
+
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--muted);
+}
+
+.qr-loading i {
+  font-size: 2rem;
+  color: var(--accent);
+}
+
+.qr-loading p {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.qr-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+#qr-image {
+  width: 200px;
+  height: 200px;
+  background: white;
+
+}
+
+#qr-image img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.qr-tip {
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 0;
+}
+
+.qr-refresh-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.qr-refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.qr-refresh-btn:active {
+  transform: translateY(0);
+}
+
+.qr-expired {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--warning);
+}
+
+.qr-expired i {
+  font-size: 2rem;
+}
+
+.qr-expired p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 微信登录成功提示 */
+.wechat-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--success);
+}
+
+.wechat-success i {
+  font-size: 2rem;
+}
+
+.wechat-success p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 480px) {
+  .login-method-switch {
+    margin-bottom: 1rem;
+  }
+  
+  .method-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  #qr-image {
+    width: 180px;
+    height: 180px;
+  }
+  
+  .wechat-qr-container {
+    padding: 1.5rem 1rem;
+  }
+  
+  .qr-popup {
+    width: 260px;
+    padding: 1rem;
+  }
 } 
