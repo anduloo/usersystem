@@ -293,42 +293,40 @@ function handleWechatLoginSuccess(token) {
   }, 1500);
 }
 
-// 显示绑定信息弹窗
-function showBindInfoModal(qrId, nickname) {
-  const modal = document.getElementById('bindInfoModal');
-  const form = document.getElementById('bindInfoForm');
-  const emailInput = document.getElementById('bind-email');
-  const nameInput = document.getElementById('bind-name');
-  const errorDiv = document.getElementById('bindInfoError');
-  
-  if (!modal) {
-    console.error('找不到 bindInfoModal 元素');
+// 微信绑定信息弹窗修复：只绑定一次onsubmit，避免输入内容消失
+const bindInfoForm = document.getElementById('bindInfoForm');
+const bindInfoModal = document.getElementById('bindInfoModal');
+const bindInfoError = document.getElementById('bindInfoError');
+let currentBindQrId = null;
+let bindInfoModalOpened = false;
+
+bindInfoForm.onsubmit = async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('bind-email').value.trim();
+  const name = document.getElementById('bind-name').value.trim();
+  if (!email || !name) {
+    bindInfoError.textContent = '请填写完整信息';
+    bindInfoError.style.display = 'block';
     return;
   }
-  
-  errorDiv.style.display = 'none';
-  nameInput.value = nickname || '';
-  emailInput.value = '';
-  
-  modal.style.display = 'flex';
+  try {
+    await completeUserInfo(currentBindQrId, email, name);
+  } catch (err) {
+    bindInfoError.textContent = '请求失败';
+    bindInfoError.style.display = 'block';
+  }
+};
 
-  form.onsubmit = async function(e) {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    const name = nameInput.value.trim();
-    
-    if (!email || !name) {
-      errorDiv.textContent = '请填写完整信息';
-      errorDiv.style.display = 'block';
-      return;
-    }
-    try {
-      await completeUserInfo(qrId, email, name);
-    } catch (err) {
-      errorDiv.textContent = '请求失败';
-      errorDiv.style.display = 'block';
-    }
-  };
+function showBindInfoModal(qrId, nickname) {
+  if (!bindInfoModal) return;
+  if (!bindInfoModalOpened) {
+    bindInfoError.style.display = 'none';
+    document.getElementById('bind-name').value = nickname || '';
+    document.getElementById('bind-email').value = '';
+    currentBindQrId = qrId;
+    bindInfoModalOpened = true;
+  }
+  bindInfoModal.style.display = 'flex';
 }
 
 // 补全用户信息
@@ -451,9 +449,9 @@ async function resendVerificationEmail(email) {
 
 // 关闭绑定信息弹窗
 function closeBindInfoModal() {
-  const modal = document.getElementById('bindInfoModal');
-  if (modal) {
-    modal.style.display = 'none';
+  if (bindInfoModal) {
+    bindInfoModal.style.display = 'none';
+    bindInfoModalOpened = false;
   }
 }
 
